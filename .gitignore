@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+target/
+build/
+vendor/
+lib/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Cache
+.cache/
+.parcel-cache/
+.npm/
+.yarn/
+.pnpm-store/
+.turbo/
+
+# Build outputs
+dist/
+out/
+
+# Noir specific
+proofs/
+*.proof
+
+# Compiler files
+cache/
+out/
+artifacts/
+typechain/
+typechain-types/
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+coverage.json
+gasReporterOutput.json
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+.env.production
+.env.development
+.env.test
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.#*
