@@ -1,0 +1,18 @@
+{
+  "name": "js-script",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aztec/bb.js": "^0.82.2",
+    "@noir-lang/noir_js": "^1.0.0-beta.3",
+    "ethers": "^6.15.0",
+    "js-sha3": "^0.9.3"
+  }
+}
