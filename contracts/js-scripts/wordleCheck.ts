@@ -33,18 +33,15 @@ async function checker(salt: string, guess: string[], wordHash: string[]): Promi
 
 
 function asciiToField(word: string): Fr {
-    let wordToHex = '0x';
-    for (let i = 0; i < word.length; i++) {
-        const charCode = word.charCodeAt(i);
-        wordToHex += charCode.toString(16)
-    }
 
-    const wordBigInt = BigInt(wordToHex);
+    const charCode = word.charCodeAt(0);
+    console.log(`Character: ${word}, ASCII Code: ${charCode}`);
+    const wordBigInt = BigInt(charCode);
     return new Fr(wordBigInt);
 }
 
 (async () => {
-    
+    console.log("Starting...");
     const bb = await Barretenberg.new();
     const salt = new Fr(0n); // Using a fixed salt for demonstration; in practice, use a random salt
     console.log("Salt:", salt.toString());
@@ -55,6 +52,7 @@ function asciiToField(word: string): Fr {
 
     for (let i = 0; i < guess.length; i++) {
         const wordField = asciiToField(guess[i]);
+        console.log(`Character: ${guess[i]}, Field Element: ${wordField.toString()}`);
         const hashed_guess = (await bb.poseidon2Hash([salt, wordField])).toString();
         guessArray[i] = hashed_guess;
     }

@@ -1,42 +1,39 @@
 use poseidon::poseidon2::Poseidon2;
 
 fn main(
-    // public inputs
-
-        // commitment hashes for each letter
+    // commitment hashes for each letter
     first_letter_commitment_hash: pub Field,
     second_letter_commitment_hash: pub Field,
     third_letter_commitment_hash: pub Field,
     fourth_letter_commitment_hash: pub Field,
     fifth_letter_commitment_hash: pub Field,
-        // guess result
+    // guess result
     first_letter_guess: pub Field,
     second_letter_guess: pub Field,
     third_letter_guess: pub Field,
     fourth_letter_guess: pub Field,
     fifth_letter_guess: pub Field,
-        // final result
-    result: pub Field,
-
+    // calculated final result
+    calculated_result: pub [u8; 5],
     // private inputs
-    first_letter: pub Field,
-    second_letter: pub Field,
-    third_letter: pub Field,
-    fourth_letter: pub Field,
-    fifth_letter: pub Field,
+    first_letter: Field,
+    second_letter: Field,
+    third_letter: Field,
+    fourth_letter: Field,
+    fifth_letter: Field,
     salt: Field,
     )
      {
 
-    let first_letter_commitment = Poseidon2::hash([first_letter, salt], 2);
+    let first_letter_commitment = Poseidon2::hash([ salt, first_letter], 2);
     assert(first_letter_commitment == first_letter_commitment_hash);
-    let second_letter_commitment = Poseidon2::hash([second_letter, salt], 2);
+    let second_letter_commitment = Poseidon2::hash([salt, second_letter], 2);
     assert(second_letter_commitment == second_letter_commitment_hash);
-    let third_letter_commitment = Poseidon2::hash([third_letter, salt], 2);
+    let third_letter_commitment = Poseidon2::hash([salt, third_letter], 2);
     assert(third_letter_commitment == third_letter_commitment_hash);
-    let fourth_letter_commitment = Poseidon2::hash([fourth_letter, salt], 2);
+    let fourth_letter_commitment = Poseidon2::hash([salt, fourth_letter], 2);
     assert(fourth_letter_commitment == fourth_letter_commitment_hash);
-    let fifth_letter_commitment = Poseidon2::hash([fifth_letter, salt], 2);
+    let fifth_letter_commitment = Poseidon2::hash([salt, fifth_letter], 2);
     assert(fifth_letter_commitment == fifth_letter_commitment_hash);
 
     let mut correct_letters = [first_letter, second_letter, third_letter, fourth_letter, fifth_letter];
@@ -61,21 +58,9 @@ fn main(
         }
     }
 
-    assert(result == result);
+    assert(calculated_result == result_array);
 }
 
-
-// fn check_letter(
-//     // public inputs
-//     letter: pub Field,
-//     commitment_hash: pub Field,
-//     // private inputs
-//     salt: Field,
-//     )
-//      {
-//     let commitment = Poseidon2::hash([letter, salt], 2);
-//     assert(commitment == commitment_hash);
-// }
 
 
 /*
@@ -84,30 +69,53 @@ fn main(
   '0x1ee63ae23fba3b1af0e30baa89b79e00193935ea9b9543f62b78f0b6385efd70',
   '0x0ed3294f4ba676f67296d5dcccdbe7dff01975032dda4c15eb3e732c77aa5cad',
   '0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00'
-
 */
 #[test]
-// fn test_main() {
-//     println("input");
-//     let salt = Field::from(0);
-//     let first_letter_commitment_hash = "0x1ba83d0d530a2a7784ac08f73f5507550c851552f170a6685068d3f78d29b920";
-
-//     let calculated_hash = Poseidon2::hash([salt, Field::from(first_letter_commitment_hash)], 2);
-//     //let first_letter = Field::from(1);
-//     println(salt);
-//     println(first_letter_commitment_hash);
-//     println(calculated_hash);
-// }
-
 fn test_main() {
-    println("input");
+    println("test");
     let salt = Field::from(0);
     let first_letter_commitment_hash: Field = 0x1ba83d0d530a2a7784ac08f73f5507550c851552f170a6685068d3f78d29b920;
     let first_letter: Field = Field::from(97);
-    
+    let second_letter_commitment_hash: Field = 0x1ee63ae23fba3b1af0e30baa89b79e00193935ea9b9543f62b78f0b6385efd70;
+    let second_letter: Field = Field::from(112);
+    let third_letter_commitment_hash: Field = 0x1ee63ae23fba3b1af0e30baa89b79e00193935ea9b9543f62b78f0b6385efd70;
+    let third_letter: Field = Field::from(112);
+    let fourth_letter_commitment_hash: Field = 0x0ed3294f4ba676f67296d5dcccdbe7dff01975032dda4c15eb3e732c77aa5cad;
+    let fourth_letter: Field = Field::from(108);
+    let fifth_letter_commitment_hash: Field = 0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00;
+    let fifth_letter: Field = Field::from(101);
 
-    let calculated_hash = Poseidon2::hash([salt, first_letter], 2);
-    println(salt);
-    println(first_letter_commitment_hash);
-    println(calculated_hash);
+    let first_letter_guess: Field = Field::from(97); // a
+    let second_letter_guess: Field = Field::from(112); // p
+    let third_letter_guess: Field = Field::from(112); // p
+    let fourth_letter_guess: Field = Field::from(97); // a
+    let fifth_letter_guess: Field = Field::from(111); // o
+
+    let result: [u8; 5] = [2, 2, 2, 1, 0]; 
+   
+
+
+   main(
+        first_letter_commitment_hash, 
+        second_letter_commitment_hash, 
+        third_letter_commitment_hash,
+        fourth_letter_commitment_hash,
+        fifth_letter_commitment_hash,
+        
+        first_letter_guess, 
+        second_letter_guess, 
+        third_letter_guess, 
+        fourth_letter_guess, 
+        fifth_letter_guess, 
+
+        result, 
+
+        first_letter, 
+        second_letter, 
+        third_letter, 
+        fourth_letter, 
+        fifth_letter, 
+
+        salt
+    );
 }
