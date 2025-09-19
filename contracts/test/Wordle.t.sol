@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Mixer} from "../src/Mixer.sol";
 import {HonkVerifier} from "../src/Verifier.sol";
-import {IncrementalMerkletree, Poseidon2} from "../src/IncrementalMerkletree.sol";
+import { Poseidon2, Field } from "@poseidon/src/Poseidon2.sol";
+
 
 contract MixerTest is Test {
    Mixer public  mixer;
@@ -18,3 +18,6 @@ contract MixerTest is Test {
         hasher = new Poseidon2();
         mixer = new Mixer(honkverifier, hasher, 20);
     }
+
+
+}
