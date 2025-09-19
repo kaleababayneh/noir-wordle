@@ -78,3 +78,9 @@ docs/
 *.temp
 *~
 .#*
+
+# Add to .gitignore
+lib/
+**/lib/
+contracts/lib/
+.gitmodules

@@ -24,40 +24,33 @@ contract Wordle {
     }
 
     modifier onlyIfGameHasnotStarted() {
-        require(player1 != address(0) && player2 != address(0), "Players not set");
+        require(player1 == address(0) || player2 == address(0), "Game already started");
         _;
     }
 
+    constructor(IVerifier _i_verifier, address _player, bytes32[] memory _word_commitment_hash1) {
+        require(_word_commitment_hash1.length == 5, "need 5 hashes");
 
-    constructor(IVerifier _i_verifier, address _player, string memory _word_commitment_hash) {
+        for (uint i = 0; i < 5; i++) word_commitment_hash1[i] = _word_commitment_hash1[i];
         i_verifier = _i_verifier;
-
-        bytes memory hash1Bytes = bytes(_word_commitment_hash);
-        require(hash1Bytes.length == 5, "Word hash 1 must be 5 characters");
-        
-        for (uint i = 0; i < 5; i++) {
-            word_commitment_hash1[i] = bytes32(uint256(uint8(hash1Bytes[i])));
-        }
         player1 = _player;
     }
 
-    function joinGame(address _player, string memory _word_commitment_hash) public onlyIfGameHasnotStarted{
-          bytes memory hash2Bytes = bytes(_word_commitment_hash);
-          require(hash2Bytes.length == 5, "Word hash 2 must be 5 characters");
 
-           for (uint i = 0; i < 5; i++) {
-            word_commitment_hash2[i] = bytes32(uint256(uint8(hash2Bytes[i])));
-        }
+    function joinGame(address _player,  bytes32[] memory _word_commitment_hash1) public onlyIfGameHasnotStarted{
+        require(_player != address(0), "Invalid player");
+        require(_player != player1, "Player 1 already joined");
+        require(_word_commitment_hash1.length == 5, "need 5 hashes");
+
+        for (uint i = 0; i < 5; i++) word_commitment_hash2[i] = _word_commitment_hash1[i];
         player2 = _player;
     }
-
 
     function guess( address player, string memory guess_word) public onlyIfGameNotOver {
         address whose_turn = getTurn();
         require(player == whose_turn, "Not your turn");
         bytes memory wordBytes = bytes(guess_word);
         require(wordBytes.length == 5, "Word must be 5 letters");
-       
         last_guess = guess_word;
     }
 
@@ -89,9 +82,9 @@ contract Wordle {
             revert Wordle__InvalidProof();
         }
 
-        if (result[0] == 2 && result[1] == 2 && result[2] == 2 && result[3] == 2 && result[4] == 2) {
-            winner = player;
-        }
+        // if (result[0] == 2 && result[1] == 2 && result[2] == 2 && result[3] == 2 && result[4] == 2) {
+        //     winner = player;
+        // }
 
         attempts += 1;
     }

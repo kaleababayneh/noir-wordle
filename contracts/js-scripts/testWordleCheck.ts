@@ -46,7 +46,7 @@ function asciiToField(word: string): Fr {
     const salt = new Fr(0n); // Using a fixed salt for demonstration; in practice, use a random salt
     console.log("Salt:", salt.toString());
 
-    const guess = "peach";
+    const guess = "apple";
     const guessArray = guess.split("");
 
 
