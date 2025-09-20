@@ -46,10 +46,10 @@ contract WordleTest is Test {
         wordle.joinGame(player2, wordHash2);
 
 
-        console.log("player1:", wordle.player1());
-        console.log("player2:", wordle.player2());
+        // console.log("player1:", wordle.player1());
+        // console.log("player2:", wordle.player2());
 
-        console.logBytes32(wordle.word_commitment_hash2(0));
+        // console.logBytes32(wordle.word_commitment_hash2(0));
        
 
         // Verify that player 2 is set correctly
@@ -57,6 +57,63 @@ contract WordleTest is Test {
     }
 
 
+    function testGuess() public {
 
+        testJoinGame();
+
+        // Player 1 makes a guess
+        vm.prank(player1);
+        string memory guess_word = "peach";
+        wordle.guess(player1, guess_word);
+        assertEq(wordle.last_guess(), guess_word);
+
+        bytes32[] memory result = new bytes32[](5);
+        result[0] = bytes32(uint256(0));
+        result[1] = bytes32(uint256(0));
+        result[2] = bytes32(uint256(0));
+        result[3] = bytes32(uint256(0));
+        result[4] = bytes32(uint256(0));
+        // Player 2 verifies the guess
+        vm.prank(player2);
+        uint256 NUM_ARGS = 18;
+        string[] memory inputs = new string[](NUM_ARGS);
+        inputs[0] = "npx";
+        inputs[1] = "tsx";
+        inputs[2] = "js-scripts/generateProof.ts";
+
+        inputs[3] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[0]))));
+        inputs[4] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[1]))));
+        inputs[5] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[2]))));
+        inputs[6] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[3]))));
+        inputs[7] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[4]))));
+
+        inputs[8] = vm.toString(wordle.word_commitment_hash1(0));
+        inputs[9] = vm.toString(wordle.word_commitment_hash1(1));
+        inputs[10] = vm.toString(wordle.word_commitment_hash1(2));
+        inputs[11] = vm.toString(wordle.word_commitment_hash1(3));
+        inputs[12] = vm.toString(wordle.word_commitment_hash1(4));
+
+        inputs[13] = vm.toString(result[0]);
+        inputs[14] = vm.toString(result[1]);
+        inputs[15] = vm.toString(result[2]);
+        inputs[16] = vm.toString(result[3]);
+        inputs[17] = vm.toString(result[4]);
+
+        bytes memory proof;
+        bytes32[] memory publicInputs;
+        // bytes memory resultOutput = vm.ffi(inputs);
+        // (proof, publicInputs) =
+        //     abi.decode(resultOutput, (bytes, bytes32[]));
+
+
+
+        // console.logBytes32(publicInputs[0]);
+        // console.logBytes32(publicInputs[1]);
+        // console.logBytes32(publicInputs[2]);
+        // console.logBytes32(publicInputs[3]);
+        // console.logBytes32(publicInputs[4]);
+
+
+    }
 
 }

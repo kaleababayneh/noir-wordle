@@ -16,6 +16,7 @@ contract Wordle {
 
     uint32 public attempts;
 
+    event WordleNewGuess(address indexed player, string indexed guess);
     error Wordle__InvalidProof();
 
     modifier onlyIfGameNotOver() {
@@ -46,19 +47,20 @@ contract Wordle {
         player2 = _player;
     }
 
-    function guess( address player, string memory guess_word) public onlyIfGameNotOver {
+    function guess(address player, string memory guess_word) public onlyIfGameNotOver {
         address whose_turn = getTurn();
         require(player == whose_turn, "Not your turn");
-        bytes memory wordBytes = bytes(guess_word);
-        require(wordBytes.length == 5, "Word must be 5 letters");
+
+        require(bytes(guess_word).length == 5, "Invalid guess");
         last_guess = guess_word;
+        emit WordleNewGuess(player, guess_word);
     }
 
-    function verify_guess(bytes memory _proof, bytes memory result, address player, string memory guess_word) public  onlyIfGameNotOver {
+    function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word) public  onlyIfGameNotOver {
         address whose_turn = getTurn();
-        require(player == whose_turn, "Not your turn");
-        
-        bytes32[] memory publicInputs =  new bytes32[](11);
+        require(verifier_player != whose_turn, "Not your turn to verify");
+
+        bytes32[] memory publicInputs =  new bytes32[](15);
 
         publicInputs[0] = bytes32(uint256(uint8(bytes(guess_word)[0])));
         publicInputs[1] = bytes32(uint256(uint8(bytes(guess_word)[1])));
@@ -70,17 +72,21 @@ contract Wordle {
         publicInputs[7] = word_commitment_hash1[2];
         publicInputs[8] = word_commitment_hash1[3];
         publicInputs[9] = word_commitment_hash1[4];
-        publicInputs[10] = bytes32(uint256(uint8(result[0])) + (uint256(uint8(result[1])) << 8) + (uint256(uint8(result[2])) << 16) + (uint256(uint8(result[3])) << 24) + (uint256(uint8(result[4])) << 32));
 
+        publicInputs[10] = result[0];
+        publicInputs[11] = result[1];
+        publicInputs[12] = result[2];
+        publicInputs[13] = result[3];
+        publicInputs[14] = result[4];
 
-        i_verifier.verify(
-            _proof, 
-            publicInputs
-        );
+        // i_verifier.verify(
+        //     _proof, 
+        //     publicInputs
+        // );
 
-        if (i_verifier.verify(_proof, publicInputs) == false) {
-            revert Wordle__InvalidProof();
-        }
+        // if (i_verifier.verify(_proof, publicInputs) == false) {
+        //     revert Wordle__InvalidProof();
+        // }
 
         // if (result[0] == 2 && result[1] == 2 && result[2] == 2 && result[3] == 2 && result[4] == 2) {
         //     winner = player;

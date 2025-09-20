@@ -9,10 +9,19 @@ const FIELD_MODULUS = 2188824287183927522224640574525727508854836440041603434369
 
 
 async function checker(salt: string, guess: string[], wordHash: string[]): Promise<any> {
-    const bb = await Barretenberg.new()
+    const bb = await Barretenberg.new();
+    const guessArray = guess;
+
+    for (let i = 0; i < guess.length; i++) {
+        const wordField = asciiToField(guess[i]);
+       // console.log(`Character: ${guess[i]}, Field Element: ${wordField.toString()}`);
+        const hashed_guess = (await bb.poseidon2Hash([Fr.fromString(salt), wordField])).toString();
+        guessArray[i] = hashed_guess;
+    }
+
 
     const result: number[] = [0, 0, 0, 0, 0]; // 0 = absent, 1 = present, 2 = correct
-    const hashed_guess: string[] = guess;
+    const hashed_guess: string[] = guessArray;
 
     for (let i = 0; i < 5; i++) {
 
@@ -35,28 +44,17 @@ async function checker(salt: string, guess: string[], wordHash: string[]): Promi
 function asciiToField(word: string): Fr {
 
     const charCode = word.charCodeAt(0);
-    console.log(`Character: ${word}, ASCII Code: ${charCode}`);
+   // console.log(`Character: ${word}, ASCII Code: ${charCode}`);
     const wordBigInt = BigInt(charCode);
     return new Fr(wordBigInt);
 }
 
 (async () => {
     console.log("Starting...");
-    const bb = await Barretenberg.new();
-    const salt = new Fr(0n); // Using a fixed salt for demonstration; in practice, use a random salt
-    console.log("Salt:", salt.toString());
 
-    const guess = "apple";
+    const salt = new Fr(0n);
+    const guess = "spppe";
     const guessArray = guess.split("");
-
-
-    for (let i = 0; i < guess.length; i++) {
-        const wordField = asciiToField(guess[i]);
-        console.log(`Character: ${guess[i]}, Field Element: ${wordField.toString()}`);
-        const hashed_guess = (await bb.poseidon2Hash([salt, wordField])).toString();
-        guessArray[i] = hashed_guess;
-    }
-
 
     const wordHash = [
         '0x1ba83d0d530a2a7784ac08f73f5507550c851552f170a6685068d3f78d29b920',
@@ -66,14 +64,12 @@ function asciiToField(word: string): Fr {
         '0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00'
     ]
 
-    console.log("Guess Array:", guessArray);
-    console.log("Word Hash:", wordHash);
+    //console.log("Guess Array:", guessArray);
+    //console.log("Word Hash:", wordHash);
 
     const result = await checker(salt.toString(), guessArray, wordHash);
     console.log("Result:", result);
 
-
-    await bb.destroy();
     console.log("Done");
 })().catch((err) => {
     console.error("Error:", err);
