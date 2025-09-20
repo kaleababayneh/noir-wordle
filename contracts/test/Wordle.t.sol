@@ -127,7 +127,37 @@ contract WordleTest is Test {
        (bytes memory proof, bytes32[] memory publicInputs) =
             abi.decode(out, (bytes, bytes32[]));
        
-       console.logBytes(proof);
+    //   console.logBytes(proof);
+
+
+    console.log("=== PUBLIC INPUTS ===");
+    console.log("Total public inputs:", publicInputs.length);
+
+
+    console.log("Word commitment hashes:");
+    for (uint i = 0; i < 5; i++) {
+        console.log("  Hash", i, ":");
+        console.logBytes32(publicInputs[i]);
+    }
+    
+    
+    console.log("Guess letters (ASCII):");
+    for (uint i = 5; i < 10; i++) {
+        console.log("  Hash", i, ":");
+        console.logBytes32(publicInputs[i]);
+    }
+    
+    
+    console.log("Wordle results:");
+    for (uint i = 10; i < 15; i++) {
+        console.log("  Position", i-10, "- Result:", uint256(publicInputs[i]));
+    }
+    //     else if (result == 1) status = "present";
+    //     else if (result == 2) status = "correct";
+    //     else status = "unknown";
+        
+    //     console.log("  Position", i-10, "- Result:", result, "Status:", status);
+    // }
        
     }
 

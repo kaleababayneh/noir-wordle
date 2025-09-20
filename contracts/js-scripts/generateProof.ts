@@ -133,9 +133,7 @@ export default async function generateProof(): Promise<any> {
 (
     async () => {
         generateProof().then((result) => {
-            console.log(result);
-            //console.log("Proof generated successfully");
-           //process.stdout.write(result);
+           process.stdout.write(result);
            process.exit(0);
         }).catch((error) => {
             console.error(error);
