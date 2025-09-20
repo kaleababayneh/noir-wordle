@@ -1,5 +1,5 @@
 import { UltraHonkBackend, } from "@aztec/bb.js";
-import circuit from "../../circuits/target/panagram.json";
+import circuit from "../../circuits/target/circuits.json";
 // @ts-ignore
 import { Noir } from "@noir-lang/noir_js";
 
@@ -17,8 +17,13 @@ export async function generateProof(guess: string, address: string, showLog:(con
 
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
-    const guess_hash = BigInt(ethers.keccak256(ethers.toUtf8Bytes(guess))) % FIELD_MODULUS;
-    const inputs = { guess_hash: guess_hash.toString(), answer_double_hash: ANSWER_HASH, address: address };
+    const inputs = {
+      guess_hash: guess_hash.toString(),
+      answer_double_hash: ANSWER_HASH,
+      address: address
+    };
+
+
 
     showLog("Generating witness... ⏳");
     const { witness } = await noir.execute(inputs);
@@ -30,11 +35,14 @@ export async function generateProof(guess: string, address: string, showLog:(con
     const offChainProof = await honk.generateProof(witness);
     showLog("Generated proof... ✅");
     showLog("Verifying proof... ⏳");
-    const isValid = await honk.verifyProof(offChainProof);
-    showLog(`Proof is valid: ${isValid} ✅`);
+    //const isValid = await honk.verifyProof(offChainProof);
+    //showLog(`Proof is valid: ${isValid} ✅`);
 
     // no longer needed for bb:)
+
     // const cleanProof = proof.slice(4); // remove first 4 bytes (buffer size)
+    console.log("Proof: ", proof.toString());
+    console.log("Public Inputs: ", publicInputs.toString());
     return { proof, publicInputs };
   } catch (error) {
     console.log(error);

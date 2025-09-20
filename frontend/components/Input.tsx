@@ -5,7 +5,7 @@ import {
   useAccount,
 } from "wagmi";
 import { abi } from "../abi/abi.ts";
-import { PANAGRAM_CONTRACT_ADDRESS } from "../constant.ts";
+import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
 import { generateProof } from "../utils/generateProof.ts";
 import { keccak256, toUtf8Bytes } from "ethers";
 
@@ -73,9 +73,9 @@ export default function Input() {
       console.log("passed step 4");
       // Send transaction and get transaction hash
       await writeContract({
-        address: PANAGRAM_CONTRACT_ADDRESS,
+        address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
-        functionName: "makeGuess",
+        functionName: "guess",
         args: [`0x${uint8ArrayToHex(proof)}`],
       });
     } catch (error: unknown) {
