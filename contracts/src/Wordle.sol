@@ -62,16 +62,17 @@ contract Wordle {
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
-        publicInputs[0] = bytes32(uint256(uint8(bytes(guess_word)[0])));
-        publicInputs[1] = bytes32(uint256(uint8(bytes(guess_word)[1])));
-        publicInputs[2] = bytes32(uint256(uint8(bytes(guess_word)[2])));
-        publicInputs[3] = bytes32(uint256(uint8(bytes(guess_word)[3])));
-        publicInputs[4] = bytes32(uint256(uint8(bytes(guess_word)[4])));
-        publicInputs[5] = word_commitment_hash1[0];
-        publicInputs[6] = word_commitment_hash1[1];
-        publicInputs[7] = word_commitment_hash1[2];
-        publicInputs[8] = word_commitment_hash1[3];
-        publicInputs[9] = word_commitment_hash1[4];
+       publicInputs[0] = word_commitment_hash1[0];
+       publicInputs[1] = word_commitment_hash1[1];
+       publicInputs[2] = word_commitment_hash1[2];
+       publicInputs[3] = word_commitment_hash1[3];
+       publicInputs[4] = word_commitment_hash1[4];
+
+       publicInputs[5] = bytes32(uint256(uint8(bytes(guess_word)[0])));
+       publicInputs[6] = bytes32(uint256(uint8(bytes(guess_word)[1])));
+       publicInputs[7] = bytes32(uint256(uint8(bytes(guess_word)[2])));
+       publicInputs[8] = bytes32(uint256(uint8(bytes(guess_word)[3])));
+       publicInputs[9] = bytes32(uint256(uint8(bytes(guess_word)[4])));
 
         publicInputs[10] = result[0];
         publicInputs[11] = result[1];
@@ -91,6 +92,11 @@ contract Wordle {
         // if (result[0] == 2 && result[1] == 2 && result[2] == 2 && result[3] == 2 && result[4] == 2) {
         //     winner = player;
         // }
+
+        if (i_verifier.verify(_proof, publicInputs) == false) {
+            revert Wordle__InvalidProof();
+        }
+
 
         attempts += 1;
     }

@@ -116,7 +116,7 @@ export default async function generateProof(): Promise<any> {
             ["bytes", "bytes32[]"],
             [proof, publicInputs]
         );
-        
+        //console.log("Public inputs:", publicInputs);
         await bb.destroy(); 
         return result;
 

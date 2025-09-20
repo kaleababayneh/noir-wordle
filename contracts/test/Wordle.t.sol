@@ -72,8 +72,8 @@ contract WordleTest is Test {
         result[0] = bytes32(uint256(0));
         result[1] = bytes32(uint256(0));
         result[2] = bytes32(uint256(0));
-        result[3] = bytes32(uint256(0));
-        result[4] = bytes32(uint256(0));
+        result[3] = bytes32(uint256(1));
+        result[4] = bytes32(uint256(1));
         // Player 2 verifies the guess
         vm.prank(player2);
         uint256 NUM_ARGS = 18;
@@ -128,7 +128,7 @@ contract WordleTest is Test {
             abi.decode(out, (bytes, bytes32[]));
        
     //   console.logBytes(proof);
-
+    /*
 
     console.log("=== PUBLIC INPUTS ===");
     console.log("Total public inputs:", publicInputs.length);
@@ -152,13 +152,12 @@ contract WordleTest is Test {
     for (uint i = 10; i < 15; i++) {
         console.log("  Position", i-10, "- Result:", uint256(publicInputs[i]));
     }
-    //     else if (result == 1) status = "present";
-    //     else if (result == 2) status = "correct";
-    //     else status = "unknown";
-        
-    //     console.log("  Position", i-10, "- Result:", result, "Status:", status);
-    // }
+    */
+    //   bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word
+
+    wordle.verify_guess(proof, result, player2, guess_word);
        
+
     }
 
 }
