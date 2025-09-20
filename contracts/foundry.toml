@@ -3,10 +3,22 @@ src = "src"
 out = "out"
 libs = ["lib"]
 ffi = true
+solc_version = "0.8.27"
+optimizer = true
+optimizer_runs = 200
+# via_ir = true  # Comment this out temporarily
 
+[profile.production]
+optimizer = true
+optimizer_runs = 200  # Reduce optimizer runs to avoid stack issues
+# via_ir = true  # Comment this out temporarily
+solc_version = "0.8.27"
+
+[profile.verifier]
+optimizer = true
+optimizer_runs = 1  # Minimal optimization for verifier
+solc_version = "0.8.27"
 
 remappings = [
     "@poseidon/=lib/poseidon2-evm/",
 ]
-
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

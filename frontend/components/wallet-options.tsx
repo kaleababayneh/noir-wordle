@@ -5,7 +5,9 @@ export function WalletOptions() {
 
   return (
     <div className="flex flex-col space-y-4">
-      {connectors.map((connector) => (
+      {connectors
+      .filter((connector) => connector.name === "MetaMask") // Only show MetaMask option
+      .map((connector) => (
         <button
           key={connector.uid}
           onClick={() => connect({ connector })}

@@ -58,16 +58,19 @@ export default function Input() {
         .value;
       // Step 1: Hash the guess string
       const guessHex = keccak256(toUtf8Bytes(guessInput));
+      console.log("passed step 1");
 
       // Step 2: Reduce the hash mod FIELD_MODULUS
       const reducedGuess = BigInt(guessHex) % FIELD_MODULUS;
-
+      console.log("passed step 2");
       // Step 3: Convert back to hex (32-byte padded)
       const guessHash = "0x" + reducedGuess.toString(16).padStart(64, "0");
+      console.log("passed step 3");
 
       // Step 4: Call your proof generator with the field-safe hash
+      
       const { proof } = await generateProof(guessHash, address, showLog);
-
+      console.log("passed step 4");
       // Send transaction and get transaction hash
       await writeContract({
         address: PANAGRAM_CONTRACT_ADDRESS,

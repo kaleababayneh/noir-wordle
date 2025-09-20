@@ -6,16 +6,23 @@ import { Noir } from "@noir-lang/noir_js";
 import { CompiledCircuit } from '@noir-lang/types';
 
 import { ANSWER_HASH } from "../constant";
+import { ethers } from "ethers";
+
+const FIELD_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 
 export async function generateProof(guess: string, address: string, showLog:(content: string) => void): Promise<{ proof: Uint8Array, publicInputs: string[] }> {
   try {
+
+
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
-    const inputs = { guess: guess, address: address, expected_hash: ANSWER_HASH };
+    const guess_hash = BigInt(ethers.keccak256(ethers.toUtf8Bytes(guess))) % FIELD_MODULUS;
+    const inputs = { guess_hash: guess_hash.toString(), answer_double_hash: ANSWER_HASH, address: address };
 
     showLog("Generating witness... ⏳");
     const { witness } = await noir.execute(inputs);
+    showLog("Are we there yet?");
     showLog("Generated witness... ✅");
 
     showLog("Generating proof... ⏳");

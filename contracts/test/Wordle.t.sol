@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {HonkVerifier} from "../src/Verifier.sol";
-import { Poseidon2, Field } from "@poseidon/src/Poseidon2.sol";
+import { Poseidon2, Field } from "../lib/poseidon2-evm/src/Poseidon2.sol";
 import { Wordle } from "../src/Wordle.sol";
 
 
