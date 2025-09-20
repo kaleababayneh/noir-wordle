@@ -69,15 +69,22 @@ export default function Input() {
 
       // Step 4: Call your proof generator with the field-safe hash
       
-      const { proof } = await generateProof(guessHash, address, showLog);
+      const { proof, publicInputs } = await generateProof( showLog);
       console.log("passed step 4");
+      showLog("Proof generated... ✅");
+
+      // Step 5: Send the proof to your contract
+      showLog("Submitting transaction... ⏳");
+      console.log("publicInputs:", publicInputs);
+      console.log("proof:", uint8ArrayToHex(proof));
+      // Uncomment below to actually send the transaction
       // Send transaction and get transaction hash
-      await writeContract({
-        address: WORDLE_CONTRACT_ADDRESS,
-        abi: abi,
-        functionName: "guess",
-        args: [`0x${uint8ArrayToHex(proof)}`],
-      });
+      // await writeContract({
+      //   address: WORDLE_CONTRACT_ADDRESS,
+      //   abi: abi,
+      //   functionName: "guess",
+      //   args: [`0x${uint8ArrayToHex(proof)}`],
+      // });
     } catch (error: unknown) {
       // Catch and log any other errors
       console.error(error);
