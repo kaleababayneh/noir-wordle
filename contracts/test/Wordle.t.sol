@@ -64,6 +64,7 @@ contract WordleTest is Test {
         // Player 1 makes a guess
         vm.prank(player1);
         string memory guess_word = "soxep";
+        string memory correct_word = "apple";
         wordle.guess(player1, guess_word);
         assertEq(wordle.last_guess(), guess_word);
 
@@ -101,6 +102,12 @@ contract WordleTest is Test {
         inputs[11] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[3]))));
         inputs[12] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[4]))));
 
+        inputs[13] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[0]))));
+        inputs[14] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[1]))));
+        inputs[15] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[2]))));
+        inputs[16] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[3]))));
+        inputs[17] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[4]))));
+
        
         // console.log("inputs[3]:", inputs[8]);
         // console.log("inputs[4]:", inputs[9]);
@@ -117,23 +124,11 @@ contract WordleTest is Test {
        // bytes32[] memory publicInputs;
         bytes memory out = vm.ffi(inputs);
 
-        // decode exactly what TS encoded: ["uint256[]"]
-        uint256[] memory resultOutput = abi.decode(out, (uint256[]));
-        for (uint i = 0; i < 5; i++) {
-           console.log("resultOutput[i]:", resultOutput[i]);
-        }
-        // (proof, publicInputs) =
-        //     abi.decode(resultOutput, (bytes, bytes32[]));
-
-
-
-        // console.logBytes32(publicInputs[0]);
-        // console.logBytes32(publicInputs[1]);
-        // console.logBytes32(publicInputs[2]);
-        // console.logBytes32(publicInputs[3]);
-        // console.logBytes32(publicInputs[4]);
-
-
+       (bytes memory proof, bytes32[] memory publicInputs) =
+            abi.decode(out, (bytes, bytes32[]));
+       
+       console.logBytes(proof);
+       
     }
 
 }
