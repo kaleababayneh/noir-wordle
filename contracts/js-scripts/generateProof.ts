@@ -82,26 +82,26 @@ export default async function generateProof(): Promise<any> {
 
         const inputs = {
             // commitment hashes for each letter
-            first_letter_commitment_hash: wordleCommitmentHash1,     // ✅ Correct
-            second_letter_commitment_hash: wordleCommitmentHash2,    // ✅ Correct
-            third_letter_commitment_hash: wordleCommitmentHash3,     // ✅ Correct
-            fourth_letter_commitment_hash: wordleCommitmentHash4,    // ✅ Correct
-            fifth_letter_commitment_hash: wordleCommitmentHash5,     // ✅ Correct
+            first_letter_commitment_hash: wordleCommitmentHash1,     
+            second_letter_commitment_hash: wordleCommitmentHash2,    
+            third_letter_commitment_hash: wordleCommitmentHash3,     
+            fourth_letter_commitment_hash: wordleCommitmentHash4,    
+            fifth_letter_commitment_hash: wordleCommitmentHash5,     
             // guess result
-            first_letter_guess: guessLetter1,                       // ✅ Correct
-            second_letter_guess: guessLetter2,                      // ✅ Correct
-            third_letter_guess: guessLetter3,                       // ✅ Correct
-            fourth_letter_guess: guessLetter4,                      // ✅ Correct
-            fifth_letter_guess: guessLetter5,                       // ✅ Correct
+            first_letter_guess: guessLetter1,                       
+            second_letter_guess: guessLetter2,                      
+            third_letter_guess: guessLetter3,                       
+            fourth_letter_guess: guessLetter4,                      
+            fifth_letter_guess: guessLetter5,                       
             // calculated final result
-            calculated_result: checkedResult,                       // ✅ Correct
+            calculated_result: checkedResult,                       
             // private inputs
-            first_letter: correctLetter1,                           // ✅ Correct
-            second_letter: correctLetter2,                          // ✅ Correct
-            third_letter: correctLetter3,                           // ✅ Correct
-            fourth_letter: correctLetter4,                          // ✅ Correct
-            fifth_letter: correctLetter5,                           // ✅ Correct
-            salt: salt.toString(),                                  // ✅ Correct
+            first_letter: correctLetter1,                           
+            second_letter: correctLetter2,                          
+            third_letter: correctLetter3,                           
+            fourth_letter: correctLetter4,                          
+            fifth_letter: correctLetter5,                           
+            salt: salt.toString(),                                  
         }
 
         const { witness } = await noir.execute(inputs);

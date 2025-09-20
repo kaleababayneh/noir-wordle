@@ -44,15 +44,6 @@ contract WordleTest is Test {
         
         vm.prank(player2);
         wordle.joinGame(player2, wordHash2);
-
-
-        // console.log("player1:", wordle.player1());
-        // console.log("player2:", wordle.player2());
-
-        // console.logBytes32(wordle.word_commitment_hash2(0));
-       
-
-        // Verify that player 2 is set correctly
         assertEq(wordle.player2(), player2);
     }
 

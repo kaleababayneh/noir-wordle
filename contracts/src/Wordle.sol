@@ -84,10 +84,25 @@ contract Wordle {
             revert Wordle__InvalidProof();
         }
 
-       bytes32[5] memory expected_word_commitment_hash;
-       bytes32[5] memory expected_guessed_word;
-       bytes32[5] memory expected_result;
+        //    bytes32[5] memory expected_word_commitment_hash;
+        //    bytes32[5] memory expected_guessed_word;
+        //    bytes32[5] memory expected_result;
 
+        // // Parse word commitment hashes from proof (positions 0-4)
+        // for (uint i = 0; i < 5; i++) {
+        //     require(expected_word_commitment_hash[i] == proof_public_inputs[i], "Word commitment hash mismatch");
+        // }
+        
+        // // Parse guessed word letters from proof (positions 5-9)
+        // for (uint i = 0; i < 5; i++) {
+        //     require(expected_guessed_word[i] == proof_public_inputs[i + 5], "Guessed word mismatch");
+        // }
+        
+        // // Parse result from proof (positions 10-14)
+        // for (uint i = 0; i < 5; i++) {
+        //     require(expected_result[i] == proof_public_inputs[i + 10], "Result mismatch");
+        // }
+        
        /**
         (bytes memory proof, bytes32[] memory publicInputs) =
             abi.decode(out, (bytes, bytes32[]));
