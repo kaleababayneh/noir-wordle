@@ -42,10 +42,10 @@ export default async function generateProof(): Promise<any> {
     const checkedResult = await checker(guessLetter_Commitment, correctGuess_Commitment);
 
     let result = ethers.AbiCoder.defaultAbiCoder().encode(
-            ["bytes32[]"],
+            ["uint256[]"],
              [checkedResult]
          );
-    process.stdout.write(`${result}`);
+    process.stdout.write(`${result}\n`);
    // process.stdout.write(`Checked Result: ${checkedResult}\n`);
     // const resultU256 = checkedResult.map(n => BigInt(n));
     //     const encoded = ethers.AbiCoder.defaultAbiCoder().encode(

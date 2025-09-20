@@ -4,7 +4,7 @@ import { Barretenberg, Fr, UltraHonkBackend } from "@aztec/bb.js";
 export async function checker(guessHash: string[], wordHash: string[]): Promise<any> {
     const bb = await Barretenberg.new();
 
-    const result: number[] = [0, 0, 0, 0, 0]; // 0 = absent, 1 = present, 2 = correct
+    let result: number[] = [0, 0, 0, 0, 0]; // 0 = absent, 1 = present, 2 = correct
     const hashed_guess: string[] = guessHash;
 
     for (let i = 0; i < 5; i++) {
@@ -19,6 +19,7 @@ export async function checker(guessHash: string[], wordHash: string[]): Promise<
             result[i] = 0; // absent
         }
     }
+    //result = [1, 1, 1, 1, 1];
     // process.stdout.write(`${result[0]}`);
     // process.stdout.write(`${result[1]}`);
     // process.stdout.write(`${result[2]}`);

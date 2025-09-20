@@ -115,8 +115,13 @@ contract WordleTest is Test {
 
        // bytes memory proof;
        // bytes32[] memory publicInputs;
-        bytes memory resultOutput = vm.ffi(inputs);
-        console.logBytes(resultOutput);
+        bytes memory out = vm.ffi(inputs);
+
+        // decode exactly what TS encoded: ["uint256[]"]
+        uint256[] memory resultOutput = abi.decode(out, (uint256[]));
+        for (uint i = 0; i < 5; i++) {
+           console.log("resultOutput[i]:", resultOutput[i]);
+        }
         // (proof, publicInputs) =
         //     abi.decode(resultOutput, (bytes, bytes32[]));
 
