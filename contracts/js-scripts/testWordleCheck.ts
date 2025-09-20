@@ -8,17 +8,9 @@ import { keccak256 } from "js-sha3";
 const FIELD_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617; // Prime field order
 
 
-async function checker(salt: string, guess: string[], wordHash: string[]): Promise<any> {
+async function checker(guessHash: string[], wordHash: string[]): Promise<any> {
     const bb = await Barretenberg.new();
-    const guessArray = guess;
-
-    for (let i = 0; i < guess.length; i++) {
-        const wordField = asciiToField(guess[i]);
-       // console.log(`Character: ${guess[i]}, Field Element: ${wordField.toString()}`);
-        const hashed_guess = (await bb.poseidon2Hash([Fr.fromString(salt), wordField])).toString();
-        guessArray[i] = hashed_guess;
-    }
-
+    const guessArray = guessHash;
 
     const result: number[] = [0, 0, 0, 0, 0]; // 0 = absent, 1 = present, 2 = correct
     const hashed_guess: string[] = guessArray;
@@ -51,9 +43,9 @@ function asciiToField(word: string): Fr {
 
 (async () => {
     console.log("Starting...");
-
+    const bb = await Barretenberg.new();
     const salt = new Fr(0n);
-    const guess = "spppe";
+    const guess = "applo";
     const guessArray = guess.split("");
 
     const wordHash = [
@@ -64,12 +56,20 @@ function asciiToField(word: string): Fr {
         '0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00'
     ]
 
+
+    for (let i = 0; i < guess.length; i++) {
+        const wordField = asciiToField(guess[i]);
+        console.log(`guess[${i}] = "${wordField}"`);
+        const hashed_guess = (await bb.poseidon2Hash([salt, wordField])).toString();
+        guessArray[i] = hashed_guess;
+    }
+
     //console.log("Guess Array:", guessArray);
     //console.log("Word Hash:", wordHash);
 
-    const result = await checker(salt.toString(), guessArray, wordHash);
+    const result = await checker(guessArray, wordHash);
     console.log("Result:", result);
-
+    bb.destroy();
     console.log("Done");
 })().catch((err) => {
     console.error("Error:", err);

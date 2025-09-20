@@ -63,7 +63,7 @@ contract WordleTest is Test {
 
         // Player 1 makes a guess
         vm.prank(player1);
-        string memory guess_word = "peach";
+        string memory guess_word = "soxep";
         wordle.guess(player1, guess_word);
         assertEq(wordle.last_guess(), guess_word);
 
@@ -81,27 +81,42 @@ contract WordleTest is Test {
         inputs[1] = "tsx";
         inputs[2] = "js-scripts/generateProof.ts";
 
-        inputs[3] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[0]))));
-        inputs[4] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[1]))));
-        inputs[5] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[2]))));
-        inputs[6] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[3]))));
-        inputs[7] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[4]))));
 
-        inputs[8] = vm.toString(wordle.word_commitment_hash1(0));
-        inputs[9] = vm.toString(wordle.word_commitment_hash1(1));
-        inputs[10] = vm.toString(wordle.word_commitment_hash1(2));
-        inputs[11] = vm.toString(wordle.word_commitment_hash1(3));
-        inputs[12] = vm.toString(wordle.word_commitment_hash1(4));
+        inputs[3] = vm.toString(wordle.word_commitment_hash1(0));
+        inputs[4] = vm.toString(wordle.word_commitment_hash1(1));
+        inputs[5] = vm.toString(wordle.word_commitment_hash1(2));
+        inputs[6] = vm.toString(wordle.word_commitment_hash1(3));
+        inputs[7] = vm.toString(wordle.word_commitment_hash1(4));
 
-        inputs[13] = vm.toString(result[0]);
-        inputs[14] = vm.toString(result[1]);
-        inputs[15] = vm.toString(result[2]);
-        inputs[16] = vm.toString(result[3]);
-        inputs[17] = vm.toString(result[4]);
+        // console.log("inputs[0]:", inputs[3]);
+        // console.log("inputs[1]:", inputs[4]);
+        // console.log("inputs[2]:", inputs[5]);
+        // console.log("inputs[3]:", inputs[6]);
+        // console.log("inputs[4]:", inputs[7]);
+       
 
-        bytes memory proof;
-        bytes32[] memory publicInputs;
-        // bytes memory resultOutput = vm.ffi(inputs);
+        inputs[8] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[0]))));
+        inputs[9] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[1]))));
+        inputs[10] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[2]))));
+        inputs[11] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[3]))));
+        inputs[12] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[4]))));
+
+       
+        // console.log("inputs[3]:", inputs[8]);
+        // console.log("inputs[4]:", inputs[9]);
+        // console.log("inputs[5]:", inputs[10]);
+        // console.log("inputs[6]:", inputs[11]);
+        // console.log("inputs[7]:", inputs[12]);
+        // inputs[13] = vm.toString(result[0]);
+        // inputs[14] = vm.toString(result[1]);
+        // inputs[15] = vm.toString(result[2]);
+        // inputs[16] = vm.toString(result[3]);
+        // inputs[17] = vm.toString(result[4]);
+
+       // bytes memory proof;
+       // bytes32[] memory publicInputs;
+        bytes memory resultOutput = vm.ffi(inputs);
+        console.logBytes(resultOutput);
         // (proof, publicInputs) =
         //     abi.decode(resultOutput, (bytes, bytes32[]));
 
