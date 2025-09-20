@@ -80,21 +80,53 @@ contract Wordle {
         publicInputs[13] = result[3];
         publicInputs[14] = result[4];
 
-        // i_verifier.verify(
-        //     _proof, 
-        //     publicInputs
-        // );
-
-        // if (i_verifier.verify(_proof, publicInputs) == false) {
-        //     revert Wordle__InvalidProof();
-        // }
-
-        // if (result[0] == 2 && result[1] == 2 && result[2] == 2 && result[3] == 2 && result[4] == 2) {
-        //     winner = player;
-        // }
-
         if (i_verifier.verify(_proof, publicInputs) == false) {
             revert Wordle__InvalidProof();
+        }
+
+       bytes32[5] memory expected_word_commitment_hash;
+       bytes32[5] memory expected_guessed_word;
+       bytes32[5] memory expected_result;
+
+       /**
+        (bytes memory proof, bytes32[] memory publicInputs) =
+            abi.decode(out, (bytes, bytes32[]));
+       
+           
+            /*
+            console.log("=== PUBLIC INPUTS ===");
+            console.log("Total public inputs:", publicInputs.length);
+
+
+            console.log("Word commitment hashes:");
+            for (uint i = 0; i < 5; i++) {
+                console.log("  Hash", i, ":");
+                console.logBytes32(publicInputs[i]);
+            }
+            
+            
+            console.log("Guess letters (ASCII):");
+            for (uint i = 5; i < 10; i++) {
+                console.log("  Hash", i, ":");
+                console.logBytes32(publicInputs[i]);
+            }
+            
+            
+            console.log("Wordle results:");
+            
+            
+            for (uint i = 10; i < 15; i++) {
+                result[i-10] = bytes32(uint256(publicInputs[i]));
+                //console.logBytes32(result[i-10]);
+            }
+            */
+
+         
+        
+
+        if (result[0] == bytes32(uint256(2)) && result[1] == bytes32(uint256(2)) && result[2] == bytes32(uint256(2)) && result[3] == bytes32(uint256(2)) && result[4] == bytes32(uint256(2))) {
+             winner = getTurn();
+             emit WordleNewGuess(winner, last_guess);
         }
 
 
@@ -104,7 +136,4 @@ contract Wordle {
     function getTurn() public view returns (address) {
         return attempts % 2 == 0 ? player1 : player2;
     }
-
- 
-
 }

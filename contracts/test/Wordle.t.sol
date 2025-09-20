@@ -63,7 +63,7 @@ contract WordleTest is Test {
 
         // Player 1 makes a guess
         vm.prank(player1);
-        string memory guess_word = "soxep";
+        string memory guess_word = "apple";
         string memory correct_word = "apple";
         wordle.guess(player1, guess_word);
         assertEq(wordle.last_guess(), guess_word);
@@ -72,8 +72,8 @@ contract WordleTest is Test {
         result[0] = bytes32(uint256(0));
         result[1] = bytes32(uint256(0));
         result[2] = bytes32(uint256(0));
-        result[3] = bytes32(uint256(1));
-        result[4] = bytes32(uint256(1));
+        result[3] = bytes32(uint256(0));
+        result[4] = bytes32(uint256(0));
         // Player 2 verifies the guess
         vm.prank(player2);
         uint256 NUM_ARGS = 18;
@@ -89,12 +89,6 @@ contract WordleTest is Test {
         inputs[6] = vm.toString(wordle.word_commitment_hash1(3));
         inputs[7] = vm.toString(wordle.word_commitment_hash1(4));
 
-        // console.log("inputs[0]:", inputs[3]);
-        // console.log("inputs[1]:", inputs[4]);
-        // console.log("inputs[2]:", inputs[5]);
-        // console.log("inputs[3]:", inputs[6]);
-        // console.log("inputs[4]:", inputs[7]);
-       
 
         inputs[8] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[0]))));
         inputs[9] = vm.toString(bytes32(uint256(uint8(bytes(guess_word)[1]))));
@@ -109,55 +103,55 @@ contract WordleTest is Test {
         inputs[17] = vm.toString(bytes32(uint256(uint8(bytes(correct_word)[4]))));
 
        
-        // console.log("inputs[3]:", inputs[8]);
-        // console.log("inputs[4]:", inputs[9]);
-        // console.log("inputs[5]:", inputs[10]);
-        // console.log("inputs[6]:", inputs[11]);
-        // console.log("inputs[7]:", inputs[12]);
-        // inputs[13] = vm.toString(result[0]);
-        // inputs[14] = vm.toString(result[1]);
-        // inputs[15] = vm.toString(result[2]);
-        // inputs[16] = vm.toString(result[3]);
-        // inputs[17] = vm.toString(result[4]);
-
-       // bytes memory proof;
-       // bytes32[] memory publicInputs;
+       
         bytes memory out = vm.ffi(inputs);
 
        (bytes memory proof, bytes32[] memory publicInputs) =
             abi.decode(out, (bytes, bytes32[]));
        
-    //   console.logBytes(proof);
-    /*
+           
+            /*
+            console.log("=== PUBLIC INPUTS ===");
+            console.log("Total public inputs:", publicInputs.length);
 
-    console.log("=== PUBLIC INPUTS ===");
-    console.log("Total public inputs:", publicInputs.length);
 
+            console.log("Word commitment hashes:");
+            for (uint i = 0; i < 5; i++) {
+                console.log("  Hash", i, ":");
+                console.logBytes32(publicInputs[i]);
+            }
+            
+            
+            console.log("Guess letters (ASCII):");
+            for (uint i = 5; i < 10; i++) {
+                console.log("  Hash", i, ":");
+                console.logBytes32(publicInputs[i]);
+            }
+            
+            
+            console.log("Wordle results:");
+            
+            
+            for (uint i = 10; i < 15; i++) {
+                result[i-10] = bytes32(uint256(publicInputs[i]));
+                //console.logBytes32(result[i-10]);
+            }
+            */
 
-    console.log("Word commitment hashes:");
-    for (uint i = 0; i < 5; i++) {
-        console.log("  Hash", i, ":");
-        console.logBytes32(publicInputs[i]);
+     for (uint i = 10; i < 15; i++) {
+        result[i-10] = bytes32(uint256(publicInputs[i]));
     }
-    
-    
-    console.log("Guess letters (ASCII):");
-    for (uint i = 5; i < 10; i++) {
-        console.log("  Hash", i, ":");
-        console.logBytes32(publicInputs[i]);
-    }
-    
-    
-    console.log("Wordle results:");
-    for (uint i = 10; i < 15; i++) {
-        console.log("  Position", i-10, "- Result:", uint256(publicInputs[i]));
-    }
-    */
-    //   bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word
-
+    //result[0] = bytes32(uint256(publicInputs[10]));
     wordle.verify_guess(proof, result, player2, guess_word);
-       
 
     }
+
+    // function testTryGuessAfterGameOver() public {
+    //     testJoinGame();
+
+    //     testGuess();
+
+    //     testGuess();
+    // }
 
 }
