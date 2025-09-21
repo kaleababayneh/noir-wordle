@@ -48,7 +48,7 @@ contract Wordle {
     }
 
     function guess(address player, string memory guess_word) public onlyIfGameNotOver {
-        address whose_turn = getTurn();
+        address whose_turn = getTurnToPlay();
         require(player == whose_turn, "Not your turn");
 
         require(bytes(guess_word).length == 5, "Invalid guess");
@@ -57,13 +57,13 @@ contract Wordle {
     }
 
     function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word) public  onlyIfGameNotOver {
-        address whose_turn = getTurn();
-        require(verifier_player != whose_turn, "Not your turn to verify");
+        address whose_turn_to_verify = getTurnToVerify();
+        require(verifier_player != whose_turn_to_verify, "Not your turn to verify");
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
         // Use the word commitment hashes of the player whose turn it is
-        if (whose_turn == player1) {
+        if (whose_turn_to_verify == player1) {
             publicInputs[0] = word_commitment_hash1[0];
             publicInputs[1] = word_commitment_hash1[1];
             publicInputs[2] = word_commitment_hash1[2];
@@ -149,7 +149,7 @@ contract Wordle {
         
 
         if (result[0] == bytes32(uint256(2)) && result[1] == bytes32(uint256(2)) && result[2] == bytes32(uint256(2)) && result[3] == bytes32(uint256(2)) && result[4] == bytes32(uint256(2))) {
-             winner = getTurn();
+             winner = getTurnToPlay();
              emit WordleNewGuess(winner, last_guess);
         }
 
@@ -157,7 +157,11 @@ contract Wordle {
         attempts += 1;
     }
 
-    function getTurn() public view returns (address) {
+    function getTurnToPlay() public view returns (address) {
         return attempts % 2 == 0 ? player1 : player2;
+    }
+
+    function getTurnToVerify() public view returns (address) {
+        return attempts % 2 == 0 ? player2 : player1;
     }
 }

@@ -5,7 +5,7 @@ import {
 } from "wagmi";
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
-import { generateProof, fetchWordCommitmentHashes, getCurrentTurn } from "../utils/generateProof.ts";
+import { generateProof, fetchWordCommitmentHashes, getCurrentTurn, getTurnToVerify } from "../utils/generateProof.ts";
 
 // Player addresses derived from private keys
 const PLAYER_1_ADDRESS = "0x532581141fA3a833090F95eBB76aCEa8Eaf9dD7d";

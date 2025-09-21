@@ -57,13 +57,13 @@ function wordToLetterHex(word: string): string[] {
   });
 }
 
-// Function to get whose turn it is
+// Function to get whose turn it is to play (make a guess)
 export async function getCurrentTurn(): Promise<string> {
   try {
     const currentTurn = await readContract(config, {
       address: WORDLE_CONTRACT_ADDRESS,
       abi: abi,
-      functionName: 'getTurn',
+      functionName: 'getTurnToPlay',
     }) as `0x${string}`;
     
     return currentTurn;
@@ -73,13 +73,34 @@ export async function getCurrentTurn(): Promise<string> {
   }
 }
 
+// Function to get whose turn it is to verify a guess
+export async function getTurnToVerify(): Promise<string> {
+  try {
+    const turnToVerify = await readContract(config, {
+      address: WORDLE_CONTRACT_ADDRESS,
+      abi: abi,
+      functionName: 'getTurnToVerify',
+    }) as `0x${string}`;
+    
+    return turnToVerify;
+  } catch (error) {
+    console.error('Error fetching turn to verify:', error);
+    throw error;
+  }
+}
+
 // Function to fetch word commitment hashes from the contract for verification
-// When Player 1 makes a guess, we verify against Player 2's word commitment hashes
-// When Player 2 makes a guess, we verify against Player 1's word commitment hashes
+// This matches the updated contract logic: the verifier uses their own word commitment hashes
+// When Player 1 makes a guess, Player 2 verifies using Player 2's hashes (word_commitment_hash2)
+// When Player 2 makes a guess, Player 1 verifies using Player 1's hashes (word_commitment_hash1)
 export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashes: string[], hashArrayName: string }> {
   try {
-    // Get whose turn it is (who made the guess)
-    const currentTurn = await getCurrentTurn();
+    // Get who should verify the current guess
+    const turnToVerify = await readContract(config, {
+      address: WORDLE_CONTRACT_ADDRESS,
+      abi: abi,
+      functionName: 'getTurnToVerify',
+    }) as `0x${string}`;
     
     // Get player addresses
     const player1 = await readContract(config, {
@@ -90,10 +111,10 @@ export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashe
     
     const wordCommitmentHashes: string[] = [];
     
-    // Fetch the OPPOSITE player's word commitment hashes for verification
-    // If it's Player 1's turn (they made the guess), verify against Player 2's hashes
-    // If it's Player 2's turn (they made the guess), verify against Player 1's hashes
-    const hashArrayName = currentTurn.toLowerCase() === player1.toLowerCase() ? 'word_commitment_hash2' : 'word_commitment_hash1';
+    // Use the verifier's word commitment hashes (matches contract logic)
+    // If Player 1 is verifying, use word_commitment_hash1
+    // If Player 2 is verifying, use word_commitment_hash2
+    const hashArrayName = turnToVerify.toLowerCase() === player1.toLowerCase() ? 'word_commitment_hash1' : 'word_commitment_hash2';
     
     for (let i = 0; i < 5; i++) {
       const hash = await readContract(config, {
@@ -106,7 +127,7 @@ export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashe
       wordCommitmentHashes.push(hash);
     }
     
-    console.log(`Fetched word commitment hashes for ${hashArrayName}:`, wordCommitmentHashes);
+    console.log(`Fetched word commitment hashes for ${hashArrayName} (verifier's hashes):`, wordCommitmentHashes);
     return { wordCommitmentHashes, hashArrayName };
   } catch (error) {
     console.error('Error fetching word commitment hashes:', error);
@@ -137,10 +158,7 @@ async function calculateWordleResults(guessLetterHashes: string[], correctCommit
     throw new Error('correctCommitmentHashes must be an array');
   }
   
-  console.log('calculateWordleResults inputs:', { guessLetterHashes, correctCommitmentHashes });
-  
-  // For "apple" vs "apple", all positions should be correct (value 2)
-  // This is a simplified version - you might need to implement the actual wordle logic
+  // Wordle logic: check each position for correct placement or existence elsewhere
   const results = [];
   for (let i = 0; i < 5; i++) {
     if (guessLetterHashes[i] === correctCommitmentHashes[i]) {
@@ -171,15 +189,11 @@ export async function generateProof(showLog:(content: string) => void, userGuess
       const result = await fetchWordCommitmentHashes();
       commitmentHashes = result.wordCommitmentHashes;
       finalHashArrayName = result.hashArrayName;
-      console.log('After fetching from contract:', { commitmentHashes, finalHashArrayName });
     } else {
       if (!finalHashArrayName) {
         // When hashes are provided but no array name, we need to determine which player's they are
         const result = await fetchWordCommitmentHashes();
         finalHashArrayName = result.hashArrayName;
-        showLog(`Using provided commitmentHashes, determined they are: ${finalHashArrayName}`);
-      } else {
-        showLog(`Using provided commitmentHashes for: ${finalHashArrayName}`);
       }
     }
 
@@ -199,7 +213,6 @@ export async function generateProof(showLog:(content: string) => void, userGuess
     }
 
     showLog("Calculating Wordle results... ⏳");
-    console.log('About to call calculateWordleResults with:', { guessLetterHashes, commitmentHashes });
     // Calculate the wordle results
     const calculatedResults = await calculateWordleResults(guessLetterHashes, commitmentHashes);
 
@@ -241,13 +254,7 @@ export async function generateProof(showLog:(content: string) => void, userGuess
       salt: salt.toString()
     };
 
-    console.log('=== CIRCUIT INPUTS DEBUG ===');
-    console.log('commitmentHashes:', commitmentHashes);
-    console.log('guessLetters:', guessLetters);
-    console.log('correctLetters:', correctLetters);
-    console.log('calculatedResults:', calculatedResults);
-    console.log('finalHashArrayName:', finalHashArrayName);
-    console.log('inputs:', inputs);
+
 
 
 
