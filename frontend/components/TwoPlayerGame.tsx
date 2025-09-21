@@ -26,7 +26,8 @@ interface GameState {
   currentTurn: string;
   turnToVerify: string;
   lastGuess: string;
-  attempts: number;
+  guesserAttempts: number;
+  verifierAttempts: number;
   winner: string;
   player1: string;
   player2: string;
@@ -58,7 +59,8 @@ export default function TwoPlayerGame() {
     currentTurn: "",
     turnToVerify: "",
     lastGuess: "",
-    attempts: 0,
+    guesserAttempts: 0,
+    verifierAttempts: 0,
     winner: "",
     player1: "",
     player2: "",
@@ -71,47 +73,61 @@ export default function TwoPlayerGame() {
   const [guessHistory, setGuessHistory] = useState<GuessResult[]>([]);
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
 
-  // Contract reads for game state
+  // Contract reads for game state (with auto-refresh)
   const { data: currentTurn } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'getTurnToPlay',
+    query: { refetchInterval: 1000 }
   });
 
   const { data: turnToVerify } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'getTurnToVerify',
+    query: { refetchInterval: 1000 }
   });
 
   const { data: lastGuess } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'last_guess',
+    query: { refetchInterval: 1000 }
   });
 
-  const { data: attempts } = useReadContract({
+  const { data: guesserAttempts } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
-    functionName: 'attempts',
+    functionName: 'guesser_attempts',
+    query: { refetchInterval: 1000 }
+  });
+
+  const { data: verifierAttempts } = useReadContract({
+    address: WORDLE_CONTRACT_ADDRESS,
+    abi: abi,
+    functionName: 'verifier_attempts',
+    query: { refetchInterval: 1000 }
   });
 
   const { data: winner } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'winner',
+    query: { refetchInterval: 1000 }
   });
 
   const { data: player1 } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'player1',
+    query: { refetchInterval: 1000 }
   });
 
   const { data: player2 } = useReadContract({
     address: WORDLE_CONTRACT_ADDRESS,
     abi: abi,
     functionName: 'player2',
+    query: { refetchInterval: 1000 }
   });
 
   // Event listeners for real-time updates
@@ -198,12 +214,13 @@ export default function TwoPlayerGame() {
       currentTurn: currentTurn as string || "",
       turnToVerify: turnToVerify as string || "",
       lastGuess: lastGuess as string || "",
-      attempts: Number(attempts) || 0,
+      guesserAttempts: Number(guesserAttempts) || 0,
+      verifierAttempts: Number(verifierAttempts) || 0,
       winner: winner as string || "",
       player1: player1 as string || "",
       player2: player2 as string || "",
     });
-  }, [currentTurn, turnToVerify, lastGuess, attempts, winner, player1, player2]);
+  }, [currentTurn, turnToVerify, lastGuess, guesserAttempts, verifierAttempts, winner, player1, player2]);
 
   // Utility functions
   const addLog = useCallback((message: string) => {
@@ -360,10 +377,14 @@ export default function TwoPlayerGame() {
 
         {/* Game Status */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div className="bg-blue-100 rounded-lg p-4">
-              <div className="text-2xl font-bold text-blue-600">{gameState.attempts}</div>
-              <div className="text-sm text-gray-600">Attempts</div>
+              <div className="text-2xl font-bold text-blue-600">{gameState.guesserAttempts}</div>
+              <div className="text-sm text-gray-600">Guesses</div>
+            </div>
+            <div className="bg-indigo-100 rounded-lg p-4">
+              <div className="text-2xl font-bold text-indigo-600">{gameState.verifierAttempts}</div>
+              <div className="text-sm text-gray-600">Verifications</div>
             </div>
             <div className="bg-green-100 rounded-lg p-4">
               <div className="text-sm font-medium text-green-600">

@@ -22,19 +22,6 @@ export const abi = [
         },
         {
             "type": "function",
-            "name": "attempts",
-            "inputs": [],
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint32",
-                    "internalType": "uint32"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
             "name": "getTurnToPlay",
             "inputs": [],
             "outputs": [
@@ -76,6 +63,19 @@ export const abi = [
             ],
             "outputs": [],
             "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "guesser_attempts",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint32",
+                    "internalType": "uint32"
+                }
+            ],
+            "stateMutability": "view"
         },
         {
             "type": "function",
@@ -143,6 +143,19 @@ export const abi = [
                     "name": "",
                     "type": "address",
                     "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "verifier_attempts",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint32",
+                    "internalType": "uint32"
                 }
             ],
             "stateMutability": "view"
