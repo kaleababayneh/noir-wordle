@@ -378,7 +378,7 @@ export default function TwoPlayerGame() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">🎯 Two-Player ZK Wordle</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">🎯 P2P ZK Wordle</h1>
           <p className="text-lg text-gray-600">Turn-based word guessing with Zero-Knowledge proofs</p>
         </div>
 
