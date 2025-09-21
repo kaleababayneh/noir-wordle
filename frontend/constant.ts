@@ -1,5 +1,6 @@
-export const PANAGRAM_CONTRACT_ADDRESS = "0x6D45d6620877E3b99153E7B858375484AcB25D12" // Replace with the actual contract address
-export const ANSWER_HASH = "0x11212d1d1aad94d2dc18aed031902208221aa74484ac3e9122863fba27d5ca36" // This is bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS) but obvs don't put the answer in here lol
-export const ANAGRAM = "GELTSRAIN"
-export const ANSWER_DOUBLE_HASH = "0x11212d1d1aad94d2dc18aed031902208221aa74484ac3e9122863fba27d5ca36" // Renamed from ANSWER_HASH
-export const WORDLE_CONTRACT_ADDRESS = "0xd9a52fA0D49AF562773A34433c769A4F03Cb6552" // Wordle contract address
+export const WORDLE_CONTRACT_ADDRESS = "0x7b74D1D3a7CaA6c98706b1351b015B2D30Ff039e" // Wordle contract address
+
+// Player addresses derived from private keys
+export const PLAYER_1_ADDRESS = "0x532581141fA3a833090F95eBB76aCEa8Eaf9dD7d"
+export const PLAYER_2_ADDRESS = "0x0b4A86d53A47f643427f041DCA2E212E615d65E7"
+

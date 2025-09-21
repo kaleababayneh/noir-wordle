@@ -9,25 +9,7 @@ import { WORDLE_CONTRACT_ADDRESS } from '../constant';
 
 import { CompiledCircuit } from '@noir-lang/types';
 
-// Hardcoded values from Wordle.t.sol test
 const HARDCODED_VALUES = {
-  // Word commitment hashes for "apple"
-  // wordCommitmentHashes: [
-  //   "0x1ba83d0d530a2a7784ac08f73f5507550c851552f170a6685068d3f78d29b920", // a
-  //   "0x1ee63ae23fba3b1af0e30baa89b79e00193935ea9b9543f62b78f0b6385efd70", // p
-  //   "0x1ee63ae23fba3b1af0e30baa89b79e00193935ea9b9543f62b78f0b6385efd70", // p
-  //   "0x0ed3294f4ba676f67296d5dcccdbe7dff01975032dda4c15eb3e732c77aa5cad", // l
-  //   "0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00"  // e
-  // ],
-  // Guess letters "apple" (ASCII values as hex)
-  // guessLetters: [
-  //   "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
-  //   "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-  //   "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-  //   "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
-  //   "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
-  // ],
-  // Correct letters for Player 1's word ("apple") (ASCII values as hex)
   player1CorrectLetters: [
     "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
     "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
@@ -35,7 +17,6 @@ const HARDCODED_VALUES = {
     "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
     "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
   ],
-  // Correct letters for Player 2's word ("peach") (ASCII values as hex)
   player2CorrectLetters: [
     "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
     "0x0000000000000000000000000000000000000000000000000000000000000065", // e (101)
@@ -45,7 +26,6 @@ const HARDCODED_VALUES = {
   ]
 };
 
-// Helper function to convert a word to letter ASCII hex values
 function wordToLetterHex(word: string): string[] {
   if (word.length !== 5) {
     throw new Error("Word must be exactly 5 letters long");
@@ -57,7 +37,6 @@ function wordToLetterHex(word: string): string[] {
   });
 }
 
-// Function to get whose turn it is to play (make a guess)
 export async function getCurrentTurn(): Promise<string> {
   try {
     const currentTurn = await readContract(config, {
@@ -73,7 +52,6 @@ export async function getCurrentTurn(): Promise<string> {
   }
 }
 
-// Function to get whose turn it is to verify a guess
 export async function getTurnToVerify(): Promise<string> {
   try {
     const turnToVerify = await readContract(config, {
@@ -95,6 +73,7 @@ export async function getTurnToVerify(): Promise<string> {
 // When Player 2 makes a guess, Player 1 verifies using Player 1's hashes (word_commitment_hash1)
 export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashes: string[], hashArrayName: string }> {
   try {
+
     // Get who should verify the current guess
     const turnToVerify = await readContract(config, {
       address: WORDLE_CONTRACT_ADDRESS,
@@ -147,30 +126,39 @@ export async function fetchWordCommitmentHashesOnly(): Promise<string[]> {
 }
 
 // Helper function to simulate the wordle checker logic
-async function calculateWordleResults(guessLetterHashes: string[], correctCommitmentHashes: string[]): Promise<number[]> {
+async function calculateWordleResults(guessLetters: string[], correctLetters: string[]): Promise<number[]> {
   // Ensure we have arrays
-  if (!Array.isArray(guessLetterHashes)) {
-    console.error('guessLetterHashes is not an array:', guessLetterHashes);
-    throw new Error('guessLetterHashes must be an array');
+  if (!Array.isArray(guessLetters)) {
+    console.error('guessLetters is not an array:', guessLetters);
+    throw new Error('guessLetters must be an array');
   }
-  if (!Array.isArray(correctCommitmentHashes)) {
-    console.error('correctCommitmentHashes is not an array:', correctCommitmentHashes);
-    throw new Error('correctCommitmentHashes must be an array');
+  if (!Array.isArray(correctLetters)) {
+    console.error('correctLetters is not an array:', correctLetters);
+    throw new Error('correctLetters must be an array');
   }
+  
+  // Convert hex strings to actual letters for comparison
+  const guessChars = guessLetters.map(hex => String.fromCharCode(parseInt(hex, 16)));
+  const correctChars = correctLetters.map(hex => String.fromCharCode(parseInt(hex, 16)));
+  
+  console.log('Guess word:', guessChars.join(''));
+  console.log('Correct word:', correctChars.join(''));
   
   // Wordle logic: check each position for correct placement or existence elsewhere
   const results = [];
   for (let i = 0; i < 5; i++) {
-    if (guessLetterHashes[i] === correctCommitmentHashes[i]) {
-      results.push(2); // Correct position
+    if (guessChars[i] === correctChars[i]) {
+      results.push(2); // Correct position (green)
     } else {
       // Check if letter exists elsewhere (yellow = 1, not found = 0)
-      const letterExistsElsewhere = correctCommitmentHashes.some((hash, idx) => 
-        idx !== i && hash === guessLetterHashes[i]
+      const letterExistsElsewhere = correctChars.some((char, idx) => 
+        idx !== i && char === guessChars[i]
       );
       results.push(letterExistsElsewhere ? 1 : 0);
     }
   }
+  
+  console.log('Calculated wordle results:', results);
   return results;
 }
 
@@ -212,10 +200,6 @@ export async function generateProof(showLog:(content: string) => void, userGuess
       guessLetterHashes.push(hash);
     }
 
-    showLog("Calculating Wordle results... ⏳");
-    // Calculate the wordle results
-    const calculatedResults = await calculateWordleResults(guessLetterHashes, commitmentHashes);
-
     showLog("Setting up Noir circuit... ⏳");
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
@@ -226,8 +210,20 @@ export async function generateProof(showLog:(content: string) => void, userGuess
     const correctLetters = finalHashArrayName === 'word_commitment_hash2' 
       ? HARDCODED_VALUES.player2CorrectLetters 
       : HARDCODED_VALUES.player1CorrectLetters;
+
+    showLog("Calculating Wordle results... ⏳");
+    // Calculate the wordle results using actual letters, not hashes
+    const calculatedResults = await calculateWordleResults(guessLetters, correctLetters);
     
     showLog(`Using correct letters for ${finalHashArrayName === 'word_commitment_hash2' ? 'Player 2 (peach)' : 'Player 1 (apple)'}`);
+    
+    // Convert guess letters to simple ASCII numbers (as expected by circuit)
+    const guessAsciiNumbers = guessLetters.map(hex => parseInt(hex, 16).toString());
+    
+    console.log('Debug - Guess letters (hex):', guessLetters);
+    console.log('Debug - Guess ASCII numbers:', guessAsciiNumbers);
+    console.log('Debug - Correct letters:', correctLetters);
+    console.log('Debug - Commitment hashes:', commitmentHashes);
     
     // Prepare inputs in the format expected by the circuit
     const inputs = {
@@ -237,12 +233,12 @@ export async function generateProof(showLog:(content: string) => void, userGuess
       third_letter_commitment_hash: commitmentHashes[2],
       fourth_letter_commitment_hash: commitmentHashes[3],
       fifth_letter_commitment_hash: commitmentHashes[4],
-      // guess letters (now dynamic based on user input)
-      first_letter_guess: guessLetters[0],
-      second_letter_guess: guessLetters[1],
-      third_letter_guess: guessLetters[2],
-      fourth_letter_guess: guessLetters[3],
-      fifth_letter_guess: guessLetters[4],
+      // guess letters as ASCII numbers (matching circuit expectation)
+      first_letter_guess: guessAsciiNumbers[0],
+      second_letter_guess: guessAsciiNumbers[1],
+      third_letter_guess: guessAsciiNumbers[2],
+      fourth_letter_guess: guessAsciiNumbers[3],
+      fifth_letter_guess: guessAsciiNumbers[4],
       // calculated final result
       calculated_result: calculatedResults,
       // private inputs (correct letters) - now dynamic based on which player's word is being verified

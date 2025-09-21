@@ -16,7 +16,13 @@ contract Wordle {
 
     uint32 public attempts;
 
-    event WordleNewGuess(address indexed player, string indexed guess);
+    event Wordle__Player1Joined(address indexed player1);
+    event Wordle__Player2Joined(address indexed player2);
+
+    event Wordle__NewGuess(address indexed player, string indexed guess);
+    event Wordle__CorrectGuess(address indexed player, string indexed guess);
+    event Wordle__GuessResult(address indexed player, string indexed guess, bytes32[] result);
+
     error Wordle__InvalidProof();
 
     modifier onlyIfGameNotOver() {
@@ -35,6 +41,7 @@ contract Wordle {
         for (uint i = 0; i < 5; i++) word_commitment_hash1[i] = _word_commitment_hash1[i];
         i_verifier = _i_verifier;
         player1 = _player;
+        emit Wordle__Player1Joined(_player);
     }
 
 
@@ -45,6 +52,7 @@ contract Wordle {
 
         for (uint i = 0; i < 5; i++) word_commitment_hash2[i] = _word_commitment_hash1[i];
         player2 = _player;
+        emit Wordle__Player2Joined(_player);
     }
 
     function guess(address player, string memory guess_word) public onlyIfGameNotOver {
@@ -53,16 +61,17 @@ contract Wordle {
 
         require(bytes(guess_word).length == 5, "Invalid guess");
         last_guess = guess_word;
-        emit WordleNewGuess(player, guess_word);
+        emit Wordle__NewGuess(player, guess_word);
     }
 
-    function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word) public  onlyIfGameNotOver {
+    function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player) public  onlyIfGameNotOver {
         address whose_turn_to_verify = getTurnToVerify();
+        address whose_turn_to_play = getTurnToPlay();
         require(verifier_player == whose_turn_to_verify, "Not your turn to verify");
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
-        // Use the word commitment hashes of the player whose turn it is
+
         if (whose_turn_to_verify == player1) {
             publicInputs[0] = word_commitment_hash1[0];
             publicInputs[1] = word_commitment_hash1[1];
@@ -77,11 +86,11 @@ contract Wordle {
             publicInputs[4] = word_commitment_hash2[4];
         }
 
-       publicInputs[5] = bytes32(uint256(uint8(bytes(guess_word)[0])));
-       publicInputs[6] = bytes32(uint256(uint8(bytes(guess_word)[1])));
-       publicInputs[7] = bytes32(uint256(uint8(bytes(guess_word)[2])));
-       publicInputs[8] = bytes32(uint256(uint8(bytes(guess_word)[3])));
-       publicInputs[9] = bytes32(uint256(uint8(bytes(guess_word)[4])));
+       publicInputs[5] = bytes32(uint256(uint8(bytes(last_guess)[0])));
+       publicInputs[6] = bytes32(uint256(uint8(bytes(last_guess)[1])));
+       publicInputs[7] = bytes32(uint256(uint8(bytes(last_guess)[2])));
+       publicInputs[8] = bytes32(uint256(uint8(bytes(last_guess)[3])));
+       publicInputs[9] = bytes32(uint256(uint8(bytes(last_guess)[4])));
 
         publicInputs[10] = result[0];
         publicInputs[11] = result[1];
@@ -93,67 +102,13 @@ contract Wordle {
             revert Wordle__InvalidProof();
         }
 
-        //    bytes32[5] memory expected_word_commitment_hash;
-        //    bytes32[5] memory expected_guessed_word;
-        //    bytes32[5] memory expected_result;
-
-        // // Parse word commitment hashes from proof (positions 0-4)
-        // for (uint i = 0; i < 5; i++) {
-        //     require(expected_word_commitment_hash[i] == proof_public_inputs[i], "Word commitment hash mismatch");
-        // }
-        
-        // // Parse guessed word letters from proof (positions 5-9)
-        // for (uint i = 0; i < 5; i++) {
-        //     require(expected_guessed_word[i] == proof_public_inputs[i + 5], "Guessed word mismatch");
-        // }
-        
-        // // Parse result from proof (positions 10-14)
-        // for (uint i = 0; i < 5; i++) {
-        //     require(expected_result[i] == proof_public_inputs[i + 10], "Result mismatch");
-        // }
-        
-       /**
-        (bytes memory proof, bytes32[] memory publicInputs) =
-            abi.decode(out, (bytes, bytes32[]));
-       
-           
-            /*
-            console.log("=== PUBLIC INPUTS ===");
-            console.log("Total public inputs:", publicInputs.length);
-
-
-            console.log("Word commitment hashes:");
-            for (uint i = 0; i < 5; i++) {
-                console.log("  Hash", i, ":");
-                console.logBytes32(publicInputs[i]);
-            }
-            
-            
-            console.log("Guess letters (ASCII):");
-            for (uint i = 5; i < 10; i++) {
-                console.log("  Hash", i, ":");
-                console.logBytes32(publicInputs[i]);
-            }
-            
-            
-            console.log("Wordle results:");
-            
-            
-            for (uint i = 10; i < 15; i++) {
-                result[i-10] = bytes32(uint256(publicInputs[i]));
-                //console.logBytes32(result[i-10]);
-            }
-            */
-
-         
-        
 
         if (result[0] == bytes32(uint256(2)) && result[1] == bytes32(uint256(2)) && result[2] == bytes32(uint256(2)) && result[3] == bytes32(uint256(2)) && result[4] == bytes32(uint256(2))) {
              winner = getTurnToPlay();
-             emit WordleNewGuess(winner, last_guess);
+             emit Wordle__CorrectGuess(winner, last_guess);
         }
 
-
+        emit Wordle__GuessResult(whose_turn_to_play, last_guess, result);
         attempts += 1;
     }
 

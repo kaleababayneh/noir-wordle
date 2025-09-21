@@ -133,7 +133,7 @@ contract WordleTest is Test {
         result[i-10] = bytes32(uint256(publicInputs[i]));
     }
     //result[0] = bytes32(uint256(publicInputs[10]));
-    wordle.verify_guess(proof, result, player2, guess_word);
+    wordle.verify_guess(proof, result, player2);
 
     }
 

@@ -165,11 +165,6 @@ export const abi = [
                     "name": "verifier_player",
                     "type": "address",
                     "internalType": "address"
-                },
-                {
-                    "name": "guess_word",
-                    "type": "string",
-                    "internalType": "string"
                 }
             ],
             "outputs": [],
@@ -228,7 +223,7 @@ export const abi = [
         },
         {
             "type": "event",
-            "name": "WordleNewGuess",
+            "name": "Wordle__CorrectGuess",
             "inputs": [
                 {
                     "name": "player",
@@ -241,6 +236,76 @@ export const abi = [
                     "type": "string",
                     "indexed": true,
                     "internalType": "string"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__GuessResult",
+            "inputs": [
+                {
+                    "name": "player",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "guess",
+                    "type": "string",
+                    "indexed": true,
+                    "internalType": "string"
+                },
+                {
+                    "name": "result",
+                    "type": "bytes32[]",
+                    "indexed": false,
+                    "internalType": "bytes32[]"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__NewGuess",
+            "inputs": [
+                {
+                    "name": "player",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "guess",
+                    "type": "string",
+                    "indexed": true,
+                    "internalType": "string"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__Player1Joined",
+            "inputs": [
+                {
+                    "name": "player1",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__Player2Joined",
+            "inputs": [
+                {
+                    "name": "player2",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
                 }
             ],
             "anonymous": false

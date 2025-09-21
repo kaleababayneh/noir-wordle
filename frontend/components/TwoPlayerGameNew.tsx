@@ -287,18 +287,14 @@ export default function TwoPlayerGame() {
 
       const { proof, publicInputs } = await generateProof(showLog, gameState.lastGuess);
       
-      // Extract only the results (positions 10-14) from publicInputs
-      const results = publicInputs.slice(10, 15) as `0x${string}`[];
-      
       addLog("✅ ZK proof generated successfully!");
       addLog("📤 Submitting verification to contract...");
-      addLog(`🔍 Results being submitted: ${results}`);
 
       writeContract({
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'verify_guess',
-        args: [`0x${uint8ArrayToHex(proof)}`, results, PLAYER_1_ADDRESS],
+        args: [`0x${uint8ArrayToHex(proof)}`, publicInputs as `0x${string}`[], PLAYER_1_ADDRESS],
       });
 
     } catch (error) {
@@ -320,18 +316,14 @@ export default function TwoPlayerGame() {
 
       const { proof, publicInputs } = await generateProof(showLog, gameState.lastGuess);
       
-      // Extract only the results (positions 10-14) from publicInputs
-      const results = publicInputs.slice(10, 15) as `0x${string}`[];
-      
       addLog("✅ ZK proof generated successfully!");
       addLog("📤 Submitting verification to contract...");
-      addLog(`🔍 Results being submitted: ${results}`);
 
       writeContract({
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'verify_guess',
-        args: [`0x${uint8ArrayToHex(proof)}`, results, PLAYER_2_ADDRESS],
+        args: [`0x${uint8ArrayToHex(proof)}`, publicInputs as `0x${string}`[], PLAYER_2_ADDRESS],
       });
 
     } catch (error) {
