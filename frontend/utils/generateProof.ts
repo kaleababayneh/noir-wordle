@@ -15,14 +15,6 @@ const HARDCODED_VALUES = {
     "0x0ed3294f4ba676f67296d5dcccdbe7dff01975032dda4c15eb3e732c77aa5cad", // l
     "0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00"  // e
   ],
-  // Guess letters "apple" (ASCII values as hex)
-  guessLetters: [
-    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
-    "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-    "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-    "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
-    "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
-  ],
   // Correct letters "apple" (ASCII values as hex)
   correctLetters: [
     "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
@@ -32,6 +24,18 @@ const HARDCODED_VALUES = {
     "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
   ]
 };
+
+// Helper function to convert a word to letter ASCII hex values
+function wordToLetterHex(word: string): string[] {
+  if (word.length !== 5) {
+    throw new Error("Word must be exactly 5 letters long");
+  }
+  
+  return word.toLowerCase().split('').map(letter => {
+    const ascii = letter.charCodeAt(0);
+    return `0x${ascii.toString(16).padStart(64, '0')}`;
+  });
+}
 
 // Helper function to simulate the wordle checker logic
 async function calculateWordleResults(guessLetterHashes: string[], correctCommitmentHashes: string[]): Promise<number[]> {
@@ -52,17 +56,20 @@ async function calculateWordleResults(guessLetterHashes: string[], correctCommit
   return results;
 }
 
-export async function generateProof(showLog:(content: string) => void): Promise<{ proof: Uint8Array, publicInputs: string[] }> {
+export async function generateProof(showLog:(content: string) => void, userGuess?: string): Promise<{ proof: Uint8Array, publicInputs: string[] }> {
   try {
     showLog("Initializing Barretenberg backend... ⏳");
     const bb = await Barretenberg.new();
     const salt = new Fr(0n);
 
+    // Use user guess if provided, otherwise fall back to hardcoded values
+    const guessLetters = userGuess ? wordToLetterHex(userGuess) : "" ;
+    
     showLog("Computing guess letter hashes... ⏳");
     // Generate hashes for the guess letters using the same method as the contract script
     const guessLetterHashes = [];
     for (let i = 0; i < 5; i++) {
-      const letterAscii = HARDCODED_VALUES.guessLetters[i];
+      const letterAscii = guessLetters[i];
       const hash = (await bb.poseidon2Hash([salt, Fr.fromString(letterAscii)])).toString();
       guessLetterHashes.push(hash);
     }
@@ -83,12 +90,12 @@ export async function generateProof(showLog:(content: string) => void): Promise<
       third_letter_commitment_hash: HARDCODED_VALUES.wordCommitmentHashes[2],
       fourth_letter_commitment_hash: HARDCODED_VALUES.wordCommitmentHashes[3],
       fifth_letter_commitment_hash: HARDCODED_VALUES.wordCommitmentHashes[4],
-      // guess letters
-      first_letter_guess: HARDCODED_VALUES.guessLetters[0],
-      second_letter_guess: HARDCODED_VALUES.guessLetters[1],
-      third_letter_guess: HARDCODED_VALUES.guessLetters[2],
-      fourth_letter_guess: HARDCODED_VALUES.guessLetters[3],
-      fifth_letter_guess: HARDCODED_VALUES.guessLetters[4],
+      // guess letters (now dynamic based on user input)
+      first_letter_guess: guessLetters[0],
+      second_letter_guess: guessLetters[1],
+      third_letter_guess: guessLetters[2],
+      fourth_letter_guess: guessLetters[3],
+      fifth_letter_guess: guessLetters[4],
       // calculated final result
       calculated_result: calculatedResults,
       // private inputs (correct letters)

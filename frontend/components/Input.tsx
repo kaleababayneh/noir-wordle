@@ -7,11 +7,7 @@ import {
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
 import { generateProof } from "../utils/generateProof.ts";
-import { keccak256, toUtf8Bytes } from "ethers";
 
-const FIELD_MODULUS = BigInt(
-  "21888242871839275222246405745257275088548364400416034343698204186575808495617"
-);
 
 // taken from @aztec/bb.js/proof
 export function uint8ArrayToHex(buffer: Uint8Array): string {
@@ -55,39 +51,61 @@ export default function Input() {
 
     try {
       const guessInput = (document.getElementById("guess") as HTMLInputElement)
-        .value;
-      // Step 1: Hash the guess string
-      const guessHex = keccak256(toUtf8Bytes(guessInput));
-      console.log("passed step 1");
-
-      // Step 2: Reduce the hash mod FIELD_MODULUS
-      const reducedGuess = BigInt(guessHex) % FIELD_MODULUS;
-      console.log("passed step 2");
-      // Step 3: Convert back to hex (32-byte padded)
-      const guessHash = "0x" + reducedGuess.toString(16).padStart(64, "0");
-      console.log("passed step 3");
-
-      // Step 4: Call your proof generator with the field-safe hash
+        .value.trim().toLowerCase();
       
-      const { proof, publicInputs } = await generateProof( showLog);
+      // Validate input length
+      if (guessInput.length !== 5) {
+        showLog("❌ Please enter exactly 5 letters");
+        setResults("Invalid input: word must be exactly 5 letters long");
+        return;
+      }
+      
+      // Validate input contains only letters
+      if (!/^[a-z]+$/.test(guessInput)) {
+        showLog("❌ Please enter only letters (a-z)");
+        setResults("Invalid input: only letters are allowed");
+        return;
+      }
+      
+      showLog(`Processing guess: "${guessInput.toUpperCase()}" 🔍`);
+      
+      // Step 4: Call your proof generator with the user's guess
+      const { proof, publicInputs } = await generateProof(showLog, guessInput);
       console.log("passed step 4");
       showLog("Proof generated... ✅");
 
-      // Step 5: Send the proof to your contract
-      showLog("Submitting transaction... ⏳");
+     
+      // Step 5: Extract results from public inputs (positions 10-14)
+      const results: `0x${string}`[] = [];
+      for (let i = 10; i < 15; i++) {
+        // Ensure results are properly formatted as hex strings
+        const result = publicInputs[i].startsWith('0x') ? publicInputs[i] : `0x${publicInputs[i]}`;
+        results.push(result as `0x${string}`);
+      }
+      
       console.log("publicInputs:", publicInputs);
       console.log("proof:", uint8ArrayToHex(proof));
-      // Uncomment below to actually send the transaction
-      // Send transaction and get transaction hash
+      console.log("extracted results:", results);
+
+      // Step 6: Send the proof to your contract
+      showLog("Submitting transaction... ⏳");
+
       // await writeContract({
       //   address: WORDLE_CONTRACT_ADDRESS,
       //   abi: abi,
-      //   functionName: "guess",
-      //   args: [`0x${uint8ArrayToHex(proof)}`],
+      //   functionName: "verify_guess",
+      //   args: [
+      //     `0x${uint8ArrayToHex(proof)}`, // proof bytes
+      //     results,                       // results array (bytes32[])
+      //     address,                       // verifier player address
+      //     guessInput                     // guess word string
+      //   ],
       // });
     } catch (error: unknown) {
       // Catch and log any other errors
       console.error(error);
+      showLog("❌ Error occurred during proof generation or transaction");
+      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -95,21 +113,34 @@ export default function Input() {
   useEffect(() => {
     if (isPending) {
       showLog("Transaction is processing... ⏳");
+      console.log("Transaction pending with hash:", hash);
     }
 
     if (error) {
       showLog("Oh no! Something went wrong. 😞");
       setResults("Transaction failed.");
+      console.error("Transaction error:", error);
     }
+    
     if (isConfirming) {
       showLog("Transaction in progress... ⏳");
+      console.log("Transaction confirming with hash:", hash);
     }
+    
     // If transaction is successful (status 1)
     if (isConfirmed) {
       showLog("You got it right! ✅");
       setResults("Transaction succeeded!");
+      console.log("✅ Transaction confirmed successfully!");
+      console.log("📝 Transaction hash:", hash);
+      
+      // Log additional transaction details if available
+      if (hash) {
+        showLog(`Transaction hash: ${hash}`);
+        console.log("🔗 View on explorer:", `https://sepolia.etherscan.io/tx/${hash}`);
+      }
     }
-  }, [isPending, error, isConfirming, isConfirmed]);
+  }, [isPending, error, isConfirming, isConfirmed, hash]);
 
   return (
     <div>
@@ -120,16 +151,23 @@ export default function Input() {
         <input
           type="text"
           id="guess"
-          maxLength={9}
-          placeholder="Type your guess"
-          className="w-full px-6 py-4 text-lg text-gray-700 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center"
+          maxLength={5}
+          placeholder="Enter 5-letter word"
+          className="w-full px-6 py-4 text-lg text-gray-700 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center uppercase tracking-widest"
+          style={{ textTransform: 'uppercase' }}
+          onInput={(e) => {
+            const target = e.target as HTMLInputElement;
+            // Only allow letters and convert to uppercase
+            target.value = target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+          }}
         />
         <button
           type="submit"
           id="submit"
-          className="w-full px-6 py-4 text-lg font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="w-full px-6 py-4 text-lg font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isPending || isConfirming}
         >
-          Submit Guess
+          {isPending || isConfirming ? 'Processing...' : 'Submit Guess'}
         </button>
       </form>
 
