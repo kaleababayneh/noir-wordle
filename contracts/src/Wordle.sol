@@ -58,7 +58,7 @@ contract Wordle {
 
     function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player, string memory guess_word) public  onlyIfGameNotOver {
         address whose_turn_to_verify = getTurnToVerify();
-        require(verifier_player != whose_turn_to_verify, "Not your turn to verify");
+        require(verifier_player == whose_turn_to_verify, "Not your turn to verify");
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 

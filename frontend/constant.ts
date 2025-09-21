@@ -2,4 +2,4 @@ export const PANAGRAM_CONTRACT_ADDRESS = "0x6D45d6620877E3b99153E7B858375484AcB2
 export const ANSWER_HASH = "0x11212d1d1aad94d2dc18aed031902208221aa74484ac3e9122863fba27d5ca36" // This is bytes32(uint256(keccak256("triangles")) % FIELD_MODULUS) but obvs don't put the answer in here lol
 export const ANAGRAM = "GELTSRAIN"
 export const ANSWER_DOUBLE_HASH = "0x11212d1d1aad94d2dc18aed031902208221aa74484ac3e9122863fba27d5ca36" // Renamed from ANSWER_HASH
-export const WORDLE_CONTRACT_ADDRESS = "0x1404E7EBB0bd5E7E28480e0372196490Be755D1b" // Wordle contract address
+export const WORDLE_CONTRACT_ADDRESS = "0xd9a52fA0D49AF562773A34433c769A4F03Cb6552" // Wordle contract address
