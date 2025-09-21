@@ -8,11 +8,6 @@ export const abi = [
                     "internalType": "contract IVerifier"
                 },
                 {
-                    "name": "_player",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
                     "name": "_word_commitment_hash1",
                     "type": "bytes32[]",
                     "internalType": "bytes32[]"
@@ -50,11 +45,6 @@ export const abi = [
             "type": "function",
             "name": "guess",
             "inputs": [
-                {
-                    "name": "player",
-                    "type": "address",
-                    "internalType": "address"
-                },
                 {
                     "name": "guess_word",
                     "type": "string",
@@ -94,11 +84,6 @@ export const abi = [
             "type": "function",
             "name": "joinGame",
             "inputs": [
-                {
-                    "name": "_player",
-                    "type": "address",
-                    "internalType": "address"
-                },
                 {
                     "name": "_word_commitment_hash1",
                     "type": "bytes32[]",
@@ -173,11 +158,6 @@ export const abi = [
                     "name": "result",
                     "type": "bytes32[]",
                     "internalType": "bytes32[]"
-                },
-                {
-                    "name": "verifier_player",
-                    "type": "address",
-                    "internalType": "address"
                 }
             ],
             "outputs": [],

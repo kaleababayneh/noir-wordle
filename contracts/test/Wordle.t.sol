@@ -29,7 +29,7 @@ contract WordleTest is Test {
         honkverifier = new HonkVerifier();
         // Join the game as player 1
         vm.prank(player1);
-        wordle = new Wordle(honkverifier, player1, wordHash);
+        wordle = new Wordle(honkverifier, wordHash);
     }
 
     function testJoinGame() public {
@@ -43,7 +43,7 @@ contract WordleTest is Test {
         wordHash2[4] = bytes32(0x1ea6c3a57c58edf4d20a808c96f4034e8fefa0bcedea27799ecfa8b7cdbafc90);
         
         vm.prank(player2);
-        wordle.joinGame(player2, wordHash2);
+        wordle.joinGame(wordHash2);
         assertEq(wordle.player2(), player2);
     }
 
@@ -56,7 +56,7 @@ contract WordleTest is Test {
         vm.prank(player1);
         string memory guess_word = "apple";
         string memory correct_word = "apple";
-        wordle.guess(player1, guess_word);
+        wordle.guess( guess_word);
         assertEq(wordle.last_guess(), guess_word);
 
         bytes32[] memory result = new bytes32[](5);
@@ -133,7 +133,7 @@ contract WordleTest is Test {
         result[i-10] = bytes32(uint256(publicInputs[i]));
     }
     //result[0] = bytes32(uint256(publicInputs[10]));
-    wordle.verify_guess(proof, result, player2);
+    wordle.verify_guess(proof, result);
 
     }
 

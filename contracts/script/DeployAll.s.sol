@@ -14,7 +14,6 @@ contract DeployAll is Script {
         console.log("Verifier deployed at:", address(verifier));
         
         // Prepare Wordle constructor parameters
-        address player1 = msg.sender; // or specify another address
         bytes32[] memory wordCommitmentHash = new bytes32[](5);
         // Add your actual commitment hashes here
         wordCommitmentHash[0] = 0x1ba83d0d530a2a7784ac08f73f5507550c851552f170a6685068d3f78d29b920;
@@ -26,7 +25,6 @@ contract DeployAll is Script {
         // Deploy Wordle with the verifier
         Wordle wordle = new Wordle(
             IVerifier(address(verifier)),
-            player1,
             wordCommitmentHash
         );
         

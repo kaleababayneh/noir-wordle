@@ -256,7 +256,7 @@ export default function TwoPlayerGame() {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'guess',
-        args: [PLAYER_1_ADDRESS, player1GuessInput.toLowerCase()],
+        args: [player1GuessInput.toLowerCase()],
       });
 
       setPlayer1GuessInput("");
@@ -283,7 +283,7 @@ export default function TwoPlayerGame() {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'guess',
-        args: [PLAYER_2_ADDRESS, player2GuessInput.toLowerCase()],
+        args: [player2GuessInput.toLowerCase()],
       });
 
       setPlayer2GuessInput("");
@@ -315,7 +315,7 @@ export default function TwoPlayerGame() {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'verify_guess',
-        args: [`0x${uint8ArrayToHex(proof)}`, results, PLAYER_1_ADDRESS],
+        args: [`0x${uint8ArrayToHex(proof)}`, results],
       });
 
     } catch (error) {
@@ -348,7 +348,7 @@ export default function TwoPlayerGame() {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
         functionName: 'verify_guess',
-        args: [`0x${uint8ArrayToHex(proof)}`, results, PLAYER_2_ADDRESS],
+        args: [`0x${uint8ArrayToHex(proof)}`, results],
       });
 
     } catch (error) {
@@ -378,7 +378,7 @@ export default function TwoPlayerGame() {
         {/* Game Status */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-            <div className="bg-blue-100 rounded-lg p-4">
+                        <div className="bg-blue-100 rounded-lg p-4">
               <div className="text-2xl font-bold text-blue-600">{gameState.guesserAttempts}</div>
               <div className="text-sm text-gray-600">Guesses</div>
             </div>

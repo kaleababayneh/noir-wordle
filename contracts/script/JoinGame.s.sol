@@ -7,7 +7,7 @@ import {Wordle} from "../src/Wordle.sol";
 contract JoinGame is Script {
     function run() external {
         // Contract addresses
-        address wordleAddress = 0xB8b8A3dec24f02531525F4f48ff74230AF58D36F;
+        address wordleAddress = 0x4641A22821BBf7E3DCe07F00808b013Dfbb21178;
         
         vm.startBroadcast();
         
@@ -27,7 +27,7 @@ contract JoinGame is Script {
         console.log("Player 2 address:", player2);
         console.log("Joining game...");
         
-        wordle.joinGame(player2, wordHash2);
+        wordle.joinGame(wordHash2);
         
         console.log("Successfully joined the game!");
         console.log("Player 2:", wordle.player2());
