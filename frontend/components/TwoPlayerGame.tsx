@@ -363,8 +363,15 @@ export default function TwoPlayerGame() {
   const isPlayer2Turn = gameState.currentTurn.toLowerCase() === PLAYER_2_ADDRESS.toLowerCase();
   const shouldPlayer1Verify = gameState.turnToVerify.toLowerCase() === PLAYER_1_ADDRESS.toLowerCase();
   const shouldPlayer2Verify = gameState.turnToVerify.toLowerCase() === PLAYER_2_ADDRESS.toLowerCase();
-  const gameStarted = gameState.player1 !== "" && gameState.player2 !== "";
-  const gameEnded = gameState.winner !== "";
+  const gameStarted = gameState.player1 !== "" && gameState.player2 !== "" && 
+                      gameState.player1 !== "0x0000000000000000000000000000000000000000" && 
+                      gameState.player2 !== "0x0000000000000000000000000000000000000000";
+  const gameEnded = gameState.winner !== "" && gameState.winner !== "0x0000000000000000000000000000000000000000";
+  
+  // Check if there's a pending guess to verify
+  const hasPendingGuess = gameState.guesserAttempts - gameState.verifierAttempts === 1;
+  const canPlayer1Verify = shouldPlayer1Verify && hasPendingGuess;
+  const canPlayer2Verify = shouldPlayer2Verify && hasPendingGuess;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -433,7 +440,9 @@ export default function TwoPlayerGame() {
                     onChange={(e) => setPlayer1GuessInput(e.target.value.toLowerCase())}
                     placeholder="Enter your guess..."
                     maxLength={5}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isPlayer1Turn ? 'border-green-500 border-2' : 'border-gray-300'
+                    }`}
                     disabled={!isPlayer1Turn || isPending || isConfirming}
                   />
                   <button
@@ -450,7 +459,7 @@ export default function TwoPlayerGame() {
               <div>
                 <button
                   onClick={handlePlayer1Verify}
-                  disabled={!shouldPlayer1Verify || isGeneratingProof || isPending || isConfirming}
+                  disabled={!canPlayer1Verify || isGeneratingProof || isPending || isConfirming}
                   className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                 >
                   <span>🔐</span>
@@ -458,9 +467,14 @@ export default function TwoPlayerGame() {
                     {isGeneratingProof ? "Generating Proof..." : "Verify Player 2's Guess"}
                   </span>
                 </button>
-                {shouldPlayer1Verify && (
+                {canPlayer1Verify && (
                   <p className="text-sm text-purple-600 mt-1">
                     It's your turn to verify Player 2's guess: "{gameState.lastGuess}"
+                  </p>
+                )}
+                {shouldPlayer1Verify && !hasPendingGuess && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Waiting for Player 2 to make a guess...
                   </p>
                 )}
               </div>
@@ -491,7 +505,9 @@ export default function TwoPlayerGame() {
                     onChange={(e) => setPlayer2GuessInput(e.target.value.toLowerCase())}
                     placeholder="Enter your guess..."
                     maxLength={5}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      isPlayer2Turn ? 'border-green-500 border-2' : 'border-gray-300'
+                    }`}
                     disabled={!isPlayer2Turn || isPending || isConfirming}
                   />
                   <button
@@ -508,7 +524,7 @@ export default function TwoPlayerGame() {
               <div>
                 <button
                   onClick={handlePlayer2Verify}
-                  disabled={!shouldPlayer2Verify || isGeneratingProof || isPending || isConfirming}
+                  disabled={!canPlayer2Verify || isGeneratingProof || isPending || isConfirming}
                   className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                 >
                   <span>🔐</span>
@@ -516,9 +532,14 @@ export default function TwoPlayerGame() {
                     {isGeneratingProof ? "Generating Proof..." : "Verify Player 1's Guess"}
                   </span>
                 </button>
-                {shouldPlayer2Verify && (
+                {canPlayer2Verify && (
                   <p className="text-sm text-purple-600 mt-1">
                     It's your turn to verify Player 1's guess: "{gameState.lastGuess}"
+                  </p>
+                )}
+                {shouldPlayer2Verify && !hasPendingGuess && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Waiting for Player 1 to make a guess...
                   </p>
                 )}
               </div>
