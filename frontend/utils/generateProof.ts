@@ -114,17 +114,6 @@ export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashe
   }
 }
 
-// Function to fetch word commitment hashes (backwards compatibility)
-export async function fetchWordCommitmentHashesOnly(): Promise<string[]> {
-  try {
-    const result = await fetchWordCommitmentHashes();
-    return result.wordCommitmentHashes;
-  } catch (error) {
-    console.error('Error fetching word commitment hashes:', error);
-    throw error;
-  }
-}
-
 // Helper function to simulate the wordle checker logic
 async function calculateWordleResults(guessLetters: string[], correctLetters: string[]): Promise<number[]> {
   // Ensure we have arrays

@@ -14,7 +14,8 @@ contract Wordle {
     address public player2 = address(0);
     address public winner = address(0);
 
-    uint32 public attempts;
+    uint32 public guesser_attempts = 0;
+    uint32 public verifier_attempts = 0;
 
     event Wordle__Player1Joined(address indexed player1);
     event Wordle__Player2Joined(address indexed player2);
@@ -58,9 +59,11 @@ contract Wordle {
     function guess(address player, string memory guess_word) public onlyIfGameNotOver {
         address whose_turn = getTurnToPlay();
         require(player == whose_turn, "Not your turn");
+        require(guesser_attempts == verifier_attempts, "Wait for verification");
 
         require(bytes(guess_word).length == 5, "Invalid guess");
         last_guess = guess_word;
+        guesser_attempts += 1;
         emit Wordle__NewGuess(player, guess_word);
     }
 
@@ -68,6 +71,7 @@ contract Wordle {
         address whose_turn_to_verify = getTurnToVerify();
         address whose_turn_to_play = getTurnToPlay();
         require(verifier_player == whose_turn_to_verify, "Not your turn to verify");
+        require(guesser_attempts - verifier_attempts == 1, "No guess to verify");
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
@@ -109,14 +113,14 @@ contract Wordle {
         }
 
         emit Wordle__GuessResult(whose_turn_to_play, last_guess, result);
-        attempts += 1;
+        verifier_attempts += 1;
     }
 
     function getTurnToPlay() public view returns (address) {
-        return attempts % 2 == 0 ? player1 : player2;
+        return guesser_attempts % 2 == 0 ? player1 : player2;
     }
 
     function getTurnToVerify() public view returns (address) {
-        return attempts % 2 == 0 ? player2 : player1;
+        return verifier_attempts % 2 == 0 ? player2 : player1;
     }
 }
