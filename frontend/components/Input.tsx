@@ -100,17 +100,17 @@ export default function Input() {
       // Step 6: Send the proof to your contract
       showLog("Submitting transaction... ⏳");
 
-      // await writeContract({
-      //   address: WORDLE_CONTRACT_ADDRESS,
-      //   abi: abi,
-      //   functionName: "verify_guess",
-      //   args: [
-      //     `0x${uint8ArrayToHex(proof)}`, // proof bytes
-      //     results,                       // results array (bytes32[])
-      //     address,                       // verifier player address
-      //     guessInput                     // guess word string
-      //   ],
-      // });
+      await writeContract({
+        address: WORDLE_CONTRACT_ADDRESS,
+        abi: abi,
+        functionName: "verify_guess",
+        args: [
+          `0x${uint8ArrayToHex(proof)}`, // proof bytes
+          results,                       // results array (bytes32[])
+          "",                       // verifier player address
+          guessInput                     // guess word string
+        ],
+      });
     } catch (error: unknown) {
       // Catch and log any other errors
       console.error(error);
@@ -163,6 +163,7 @@ export default function Input() {
           id="guess"
           maxLength={5}
           placeholder="Enter 5-letter word"
+          value="peace"
           className="w-full px-6 py-4 text-lg text-gray-700 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center uppercase tracking-widest"
           style={{ textTransform: 'uppercase' }}
           onInput={(e) => {

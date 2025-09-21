@@ -29,11 +29,11 @@ const HARDCODED_VALUES = {
   // ],
   // Correct letters "apple" (ASCII values as hex)
   correctLetters: [
-    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
     "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-    "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
-    "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
-    "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
+    "0x0000000000000000000000000000000000000000000000000000000000000065", // e (101)
+    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (112)
+    "0x0000000000000000000000000000000000000000000000000000000000000063", // c (108)
+    "0x0000000000000000000000000000000000000000000000000000000000000068"  // h (104)
   ]
 };
 
@@ -59,13 +59,13 @@ export async function fetchWordCommitmentHashes(): Promise<string[]> {
       const hash = await readContract(config, {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
-        functionName: 'word_commitment_hash1',
+        functionName: 'word_commitment_hash2',
         args: [BigInt(i)],
       }) as `0x${string}`;
       
       wordCommitmentHashes.push(hash);
     }
-    
+    console.log("Fetched word commitment hashes from contract:", wordCommitmentHashes);
     return wordCommitmentHashes;
   } catch (error) {
     console.error('Error fetching word commitment hashes:', error);
