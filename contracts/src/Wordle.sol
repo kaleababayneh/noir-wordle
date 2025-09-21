@@ -36,42 +36,75 @@ contract Wordle {
         _;
     }
 
-    constructor(IVerifier _i_verifier, address _player, bytes32[] memory _word_commitment_hash1) {
+    constructor(IVerifier _i_verifier, bytes32[] memory _word_commitment_hash1) {
+        require(address(_i_verifier) != address(0), "Invalid verifier address");
         require(_word_commitment_hash1.length == 5, "need 5 hashes");
-
-        for (uint i = 0; i < 5; i++) word_commitment_hash1[i] = _word_commitment_hash1[i];
+        require(msg.sender != address(0), "Invalid player");
+        
+        // Validate commitment hashes are not zero
+        for (uint i = 0; i < 5; i++) {
+            require(_word_commitment_hash1[i] != bytes32(0), "Invalid commitment hash");
+            word_commitment_hash1[i] = _word_commitment_hash1[i];
+        }
+        
         i_verifier = _i_verifier;
-        player1 = _player;
-        emit Wordle__Player1Joined(_player);
+        player1 = msg.sender;
+        emit Wordle__Player1Joined(msg.sender);
     }
 
 
-    function joinGame(address _player,  bytes32[] memory _word_commitment_hash1) public onlyIfGameHasnotStarted{
-        require(_player != address(0), "Invalid player");
-        require(_player != player1, "Player 1 already joined");
+    function joinGame(bytes32[] memory _word_commitment_hash1) public onlyIfGameHasnotStarted{
+        require(msg.sender != address(0), "Invalid player");
+        require(msg.sender != player1, "Player 1 already joined");
         require(_word_commitment_hash1.length == 5, "need 5 hashes");
 
-        for (uint i = 0; i < 5; i++) word_commitment_hash2[i] = _word_commitment_hash1[i];
-        player2 = _player;
-        emit Wordle__Player2Joined(_player);
+        // Validate commitment hashes are not zero
+        for (uint i = 0; i < 5; i++) {
+            require(_word_commitment_hash1[i] != bytes32(0), "Invalid commitment hash");
+            word_commitment_hash2[i] = _word_commitment_hash1[i];
+        }
+        
+        player2 = msg.sender;
+        emit Wordle__Player2Joined(msg.sender);
     }
 
-    function guess(address player, string memory guess_word) public onlyIfGameNotOver {
+    function guess(string memory guess_word) public onlyIfGameNotOver {
+        require(player2 != address(0), "Player 2 not joined yet");
         address whose_turn = getTurnToPlay();
-        require(player == whose_turn, "Not your turn");
+        require(msg.sender == whose_turn, "Not your turn");
         require(guesser_attempts == verifier_attempts, "Wait for verification");
 
-        require(bytes(guess_word).length == 5, "Invalid guess");
+        // Enhanced input validation
+        bytes memory guess_bytes = bytes(guess_word);
+        require(guess_bytes.length == 5, "Invalid guess length");
+        
+        // Validate each character is a lowercase letter
+        for (uint i = 0; i < 5; i++) {
+            require(guess_bytes[i] >= 0x61 && guess_bytes[i] <= 0x7A, "Only lowercase letters allowed");
+        }
+        
         last_guess = guess_word;
         guesser_attempts += 1;
-        emit Wordle__NewGuess(player, guess_word);
+        emit Wordle__NewGuess(msg.sender, guess_word);
     }
 
-    function verify_guess(bytes memory _proof, bytes32[] memory result, address verifier_player) public  onlyIfGameNotOver {
+    function verify_guess(bytes memory _proof, bytes32[] memory result) public  onlyIfGameNotOver {
         address whose_turn_to_verify = getTurnToVerify();
         address whose_turn_to_play = getTurnToPlay();
-        require(verifier_player == whose_turn_to_verify, "Not your turn to verify");
+        require(msg.sender == whose_turn_to_verify, "Not your turn to verify");
         require(guesser_attempts - verifier_attempts == 1, "No guess to verify");
+        
+        // Validate result array
+        require(result.length == 5, "Result must have exactly 5 elements");
+        
+        // Validate each result is 0, 1, or 2
+        for (uint i = 0; i < 5; i++) {
+            uint256 val = uint256(result[i]);
+            require(val <= 2, "Invalid result value");
+        }
+        
+        // Ensure last_guess is not empty (safety check)
+        require(bytes(last_guess).length == 5, "Invalid last guess state");
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
