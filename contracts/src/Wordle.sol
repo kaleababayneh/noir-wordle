@@ -62,11 +62,20 @@ contract Wordle {
 
         bytes32[] memory publicInputs =  new bytes32[](15);
 
-       publicInputs[0] = word_commitment_hash1[0];
-       publicInputs[1] = word_commitment_hash1[1];
-       publicInputs[2] = word_commitment_hash1[2];
-       publicInputs[3] = word_commitment_hash1[3];
-       publicInputs[4] = word_commitment_hash1[4];
+        // Use the word commitment hashes of the player whose turn it is
+        if (whose_turn == player1) {
+            publicInputs[0] = word_commitment_hash1[0];
+            publicInputs[1] = word_commitment_hash1[1];
+            publicInputs[2] = word_commitment_hash1[2];
+            publicInputs[3] = word_commitment_hash1[3];
+            publicInputs[4] = word_commitment_hash1[4];
+        } else {
+            publicInputs[0] = word_commitment_hash2[0];
+            publicInputs[1] = word_commitment_hash2[1];
+            publicInputs[2] = word_commitment_hash2[2];
+            publicInputs[3] = word_commitment_hash2[3];
+            publicInputs[4] = word_commitment_hash2[4];
+        }
 
        publicInputs[5] = bytes32(uint256(uint8(bytes(guess_word)[0])));
        publicInputs[6] = bytes32(uint256(uint8(bytes(guess_word)[1])));

@@ -27,12 +27,20 @@ const HARDCODED_VALUES = {
   //   "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
   //   "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
   // ],
-  // Correct letters "apple" (ASCII values as hex)
-  correctLetters: [
+  // Correct letters for Player 1's word ("apple") (ASCII values as hex)
+  player1CorrectLetters: [
+    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
+    "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
+    "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
+    "0x000000000000000000000000000000000000000000000000000000000000006c", // l (108)
+    "0x0000000000000000000000000000000000000000000000000000000000000065"  // e (101)
+  ],
+  // Correct letters for Player 2's word ("peach") (ASCII values as hex)
+  player2CorrectLetters: [
     "0x0000000000000000000000000000000000000000000000000000000000000070", // p (112)
     "0x0000000000000000000000000000000000000000000000000000000000000065", // e (101)
-    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (112)
-    "0x0000000000000000000000000000000000000000000000000000000000000063", // c (108)
+    "0x0000000000000000000000000000000000000000000000000000000000000061", // a (97)
+    "0x0000000000000000000000000000000000000000000000000000000000000063", // c (99)
     "0x0000000000000000000000000000000000000000000000000000000000000068"  // h (104)
   ]
 };
@@ -49,34 +57,88 @@ function wordToLetterHex(word: string): string[] {
   });
 }
 
-// Function to fetch word commitment hashes from the contract
-export async function fetchWordCommitmentHashes(): Promise<string[]> {
+// Function to get whose turn it is
+export async function getCurrentTurn(): Promise<string> {
   try {
+    const currentTurn = await readContract(config, {
+      address: WORDLE_CONTRACT_ADDRESS,
+      abi: abi,
+      functionName: 'getTurn',
+    }) as `0x${string}`;
+    
+    return currentTurn;
+  } catch (error) {
+    console.error('Error fetching current turn:', error);
+    throw error;
+  }
+}
+
+// Function to fetch word commitment hashes from the contract for verification
+// When Player 1 makes a guess, we verify against Player 2's word commitment hashes
+// When Player 2 makes a guess, we verify against Player 1's word commitment hashes
+export async function fetchWordCommitmentHashes(): Promise<{ wordCommitmentHashes: string[], hashArrayName: string }> {
+  try {
+    // Get whose turn it is (who made the guess)
+    const currentTurn = await getCurrentTurn();
+    
+    // Get player addresses
+    const player1 = await readContract(config, {
+      address: WORDLE_CONTRACT_ADDRESS,
+      abi: abi,
+      functionName: 'player1',
+    }) as `0x${string}`;
+    
     const wordCommitmentHashes: string[] = [];
     
-    // Fetch each hash individually since it's an array
+    // Fetch the OPPOSITE player's word commitment hashes for verification
+    // If it's Player 1's turn (they made the guess), verify against Player 2's hashes
+    // If it's Player 2's turn (they made the guess), verify against Player 1's hashes
+    const hashArrayName = currentTurn.toLowerCase() === player1.toLowerCase() ? 'word_commitment_hash2' : 'word_commitment_hash1';
+    
     for (let i = 0; i < 5; i++) {
       const hash = await readContract(config, {
         address: WORDLE_CONTRACT_ADDRESS,
         abi: abi,
-        functionName: 'word_commitment_hash2',
+        functionName: hashArrayName,
         args: [BigInt(i)],
       }) as `0x${string}`;
       
       wordCommitmentHashes.push(hash);
     }
-    console.log("Fetched word commitment hashes from contract:", wordCommitmentHashes);
-    return wordCommitmentHashes;
+    
+    console.log(`Fetched word commitment hashes for ${hashArrayName}:`, wordCommitmentHashes);
+    return { wordCommitmentHashes, hashArrayName };
   } catch (error) {
     console.error('Error fetching word commitment hashes:', error);
-    // Fallback to hardcoded values if fetching fails
     throw error;
-    // return HARDCODED_VALUES.wordCommitmentHashes;
+  }
+}
+
+// Function to fetch word commitment hashes (backwards compatibility)
+export async function fetchWordCommitmentHashesOnly(): Promise<string[]> {
+  try {
+    const result = await fetchWordCommitmentHashes();
+    return result.wordCommitmentHashes;
+  } catch (error) {
+    console.error('Error fetching word commitment hashes:', error);
+    throw error;
   }
 }
 
 // Helper function to simulate the wordle checker logic
 async function calculateWordleResults(guessLetterHashes: string[], correctCommitmentHashes: string[]): Promise<number[]> {
+  // Ensure we have arrays
+  if (!Array.isArray(guessLetterHashes)) {
+    console.error('guessLetterHashes is not an array:', guessLetterHashes);
+    throw new Error('guessLetterHashes must be an array');
+  }
+  if (!Array.isArray(correctCommitmentHashes)) {
+    console.error('correctCommitmentHashes is not an array:', correctCommitmentHashes);
+    throw new Error('correctCommitmentHashes must be an array');
+  }
+  
+  console.log('calculateWordleResults inputs:', { guessLetterHashes, correctCommitmentHashes });
+  
   // For "apple" vs "apple", all positions should be correct (value 2)
   // This is a simplified version - you might need to implement the actual wordle logic
   const results = [];
@@ -94,7 +156,7 @@ async function calculateWordleResults(guessLetterHashes: string[], correctCommit
   return results;
 }
 
-export async function generateProof(showLog:(content: string) => void, userGuess?: string, wordCommitmentHashes?: string[]): Promise<{ proof: Uint8Array, publicInputs: string[] }> {
+export async function generateProof(showLog:(content: string) => void, userGuess?: string, wordCommitmentHashes?: string[], hashArrayName?: string): Promise<{ proof: Uint8Array, publicInputs: string[] }> {
   try {
     showLog("Initializing Barretenberg backend... ⏳");
     const bb = await Barretenberg.new();
@@ -102,13 +164,30 @@ export async function generateProof(showLog:(content: string) => void, userGuess
 
     // Use provided word commitment hashes, or fetch them, or fall back to hardcoded
     let commitmentHashes = wordCommitmentHashes;
+    let finalHashArrayName = hashArrayName || '';
+    
     if (!commitmentHashes) {
       showLog("Fetching word commitment hashes from contract... ⏳");
-      commitmentHashes = await fetchWordCommitmentHashes();
+      const result = await fetchWordCommitmentHashes();
+      commitmentHashes = result.wordCommitmentHashes;
+      finalHashArrayName = result.hashArrayName;
+      console.log('After fetching from contract:', { commitmentHashes, finalHashArrayName });
+    } else {
+      if (!finalHashArrayName) {
+        // When hashes are provided but no array name, we need to determine which player's they are
+        const result = await fetchWordCommitmentHashes();
+        finalHashArrayName = result.hashArrayName;
+        showLog(`Using provided commitmentHashes, determined they are: ${finalHashArrayName}`);
+      } else {
+        showLog(`Using provided commitmentHashes for: ${finalHashArrayName}`);
+      }
     }
 
-    // Use user guess if provided, otherwise fall back to hardcoded values
-    const guessLetters = userGuess ? wordToLetterHex(userGuess) :"";
+    // Use user guess if provided, otherwise throw error (since we always expect a guess now)
+    if (!userGuess) {
+      throw new Error("User guess is required");
+    }
+    const guessLetters = wordToLetterHex(userGuess);
     
     showLog("Computing guess letter hashes... ⏳");
     // Generate hashes for the guess letters using the same method as the contract script
@@ -120,12 +199,22 @@ export async function generateProof(showLog:(content: string) => void, userGuess
     }
 
     showLog("Calculating Wordle results... ⏳");
+    console.log('About to call calculateWordleResults with:', { guessLetterHashes, commitmentHashes });
     // Calculate the wordle results
     const calculatedResults = await calculateWordleResults(guessLetterHashes, commitmentHashes);
 
     showLog("Setting up Noir circuit... ⏳");
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
+    
+    // Determine which player's correct letters to use based on the hash array being verified
+    // If verifying word_commitment_hash1, use player1's correct letters ("apple")
+    // If verifying word_commitment_hash2, use player2's correct letters ("peach")
+    const correctLetters = finalHashArrayName === 'word_commitment_hash2' 
+      ? HARDCODED_VALUES.player2CorrectLetters 
+      : HARDCODED_VALUES.player1CorrectLetters;
+    
+    showLog(`Using correct letters for ${finalHashArrayName === 'word_commitment_hash2' ? 'Player 2 (peach)' : 'Player 1 (apple)'}`);
     
     // Prepare inputs in the format expected by the circuit
     const inputs = {
@@ -143,14 +232,22 @@ export async function generateProof(showLog:(content: string) => void, userGuess
       fifth_letter_guess: guessLetters[4],
       // calculated final result
       calculated_result: calculatedResults,
-      // private inputs (correct letters)
-      first_letter: HARDCODED_VALUES.correctLetters[0],
-      second_letter: HARDCODED_VALUES.correctLetters[1],
-      third_letter: HARDCODED_VALUES.correctLetters[2],
-      fourth_letter: HARDCODED_VALUES.correctLetters[3],
-      fifth_letter: HARDCODED_VALUES.correctLetters[4],
+      // private inputs (correct letters) - now dynamic based on which player's word is being verified
+      first_letter: correctLetters[0],
+      second_letter: correctLetters[1],
+      third_letter: correctLetters[2],
+      fourth_letter: correctLetters[3],
+      fifth_letter: correctLetters[4],
       salt: salt.toString()
     };
+
+    console.log('=== CIRCUIT INPUTS DEBUG ===');
+    console.log('commitmentHashes:', commitmentHashes);
+    console.log('guessLetters:', guessLetters);
+    console.log('correctLetters:', correctLetters);
+    console.log('calculatedResults:', calculatedResults);
+    console.log('finalHashArrayName:', finalHashArrayName);
+    console.log('inputs:', inputs);
 
 
 

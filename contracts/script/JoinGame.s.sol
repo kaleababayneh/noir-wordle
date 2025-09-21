@@ -7,7 +7,7 @@ import {Wordle} from "../src/Wordle.sol";
 contract JoinGame is Script {
     function run() external {
         // Contract addresses
-        address wordleAddress = 0xb509d73A10255E2Eb0b74720d257ECDd7C2d6153;
+        address wordleAddress = 0x155E78fb3b3D7995B1d56B7A4C0894f7eBDE4002;
         
         vm.startBroadcast();
         

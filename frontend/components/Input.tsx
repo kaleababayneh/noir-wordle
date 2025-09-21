@@ -6,8 +6,11 @@ import {
 } from "wagmi";
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
-import { generateProof, fetchWordCommitmentHashes } from "../utils/generateProof.ts";
+import { generateProof, fetchWordCommitmentHashes, getCurrentTurn } from "../utils/generateProof.ts";
 
+// Player addresses derived from private keys
+const PLAYER_1_ADDRESS = "0x532581141fA3a833090F95eBB76aCEa8Eaf9dD7d";
+const PLAYER_2_ADDRESS = "0x0b4A86d53A47f643427f041DCA2E212E615d65E7";
 
 // taken from @aztec/bb.js/proof
 export function uint8ArrayToHex(buffer: Uint8Array): string {
@@ -33,6 +36,8 @@ export default function Input() {
   const [logs, setLogs] = useState<string[]>([]);
   const [results, setResults] = useState("");
   const [wordCommitmentHashes, setWordCommitmentHashes] = useState<string[] | null>(null);
+  const [guessInput, setGuessInput] = useState("peace");
+  const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
   const { address } = useAccount();
   
   if (!address) {
@@ -107,7 +112,7 @@ export default function Input() {
         args: [
           `0x${uint8ArrayToHex(proof)}`, // proof bytes
           results,                       // results array (bytes32[])
-          "",                       // verifier player address
+          address,                       // verifier player address
           guessInput                     // guess word string
         ],
       });

@@ -1,7 +1,7 @@
 import { WagmiProvider } from "wagmi";
 import { config } from "./config.ts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Panagram from "./components/Panagram.tsx";
+import TwoPlayerGame from "./components/TwoPlayerGame.tsx";
 
 import "./App.css";
 
@@ -12,7 +12,7 @@ function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <div>
-          <Panagram />
+          <TwoPlayerGame />
         </div>
       </QueryClientProvider>
     </WagmiProvider>
