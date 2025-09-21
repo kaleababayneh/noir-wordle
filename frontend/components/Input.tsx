@@ -6,7 +6,7 @@ import {
 } from "wagmi";
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
-import { generateProof } from "../utils/generateProof.ts";
+import { generateProof, fetchWordCommitmentHashes } from "../utils/generateProof.ts";
 
 
 // taken from @aztec/bb.js/proof
@@ -32,6 +32,7 @@ export default function Input() {
     });
   const [logs, setLogs] = useState<string[]>([]);
   const [results, setResults] = useState("");
+  const [wordCommitmentHashes, setWordCommitmentHashes] = useState<string[] | null>(null);
   const { address } = useAccount();
   
   if (!address) {
@@ -69,8 +70,17 @@ export default function Input() {
       
       showLog(`Processing guess: "${guessInput.toUpperCase()}" 🔍`);
       
+      // Fetch word commitment hashes if not already cached
+      let hashes = wordCommitmentHashes;
+      if (!hashes) {
+        showLog("Fetching word commitment hashes from contract... ⏳");
+        hashes = await fetchWordCommitmentHashes();
+        setWordCommitmentHashes(hashes);
+        showLog("Word commitment hashes fetched! ✅");
+      }
+      
       // Step 4: Call your proof generator with the user's guess
-      const { proof, publicInputs } = await generateProof(showLog, guessInput);
+      const { proof, publicInputs } = await generateProof(showLog, guessInput, hashes);
       console.log("passed step 4");
       showLog("Proof generated... ✅");
 
