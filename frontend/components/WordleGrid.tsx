@@ -2,7 +2,7 @@ interface WordleGridProps {
   playerNumber: 1 | 2;
   guesses: Array<{
     word: string;
-    results?: string[];
+    results?: string[] | number[];
     isVerified: boolean;
   }>;
   currentGuess?: string;
@@ -19,7 +19,7 @@ export function WordleGrid({
   console.log(`Player ${playerNumber} WordleGrid guesses:`, guesses);
   
     // Helper function to get cell styling based on result
-  const getCellStyling = (result?: string, hasLetter: boolean = false) => {
+  const getCellStyling = (result?: string | number, hasLetter: boolean = false) => {
     const baseStyle = "w-12 h-12 border-2 flex items-center justify-center text-lg font-bold uppercase transition-all duration-300";
     
     if (!hasLetter) {
@@ -32,11 +32,15 @@ export function WordleGrid({
     }
     
     // Verified results - Wordle style with white text on colored backgrounds
-    switch (result) {
-      case '0x0000000000000000000000000000000000000000000000000000000000000002':
+    // Handle integer results: 2=green, 1=yellow, 0=gray
+    const resultValue = typeof result === 'string' ? parseInt(result) : result;
+    
+    switch (resultValue) {
+      case 2:
         return `${baseStyle} bg-green-600 text-white border-green-600 shadow-md`; // Correct position
-      case '0x0000000000000000000000000000000000000000000000000000000000000001':
+      case 1:
         return `${baseStyle} bg-yellow-500 text-white border-yellow-500 shadow-md`; // Wrong position
+      case 0:
       default:
         return `${baseStyle} bg-gray-600 text-white border-gray-600 shadow-md`; // Not in word
     }
@@ -77,7 +81,7 @@ export function WordleGrid({
   }
   
   // Add current guess row (if there's space and a current guess)
-  if (guesses.length < maxRows && currentGuess) {
+  if (guesses.length < maxRows && currentGuess && currentGuess.length > 0) {
     const cells = [];
     
     for (let j = 0; j < 5; j++) {

@@ -3,7 +3,7 @@ import { WordleGrid } from './WordleGrid';
 
 interface GuessResult {
   word: string;
-  results?: string[];
+  results?: string[] | number[];
   isVerified: boolean;
 }
 
@@ -43,7 +43,7 @@ export function PlayerSection({
   const handleGuess = () => {
     if (guessInput.length === 5 && /^[a-z]+$/i.test(guessInput)) {
       onGuess(guessInput.toLowerCase());
-      setGuessInput("");
+      setGuessInput(""); // Clear input immediately for next guess
     }
   };
 
@@ -74,6 +74,7 @@ export function PlayerSection({
           playerNumber={playerNumber}
           guesses={playerGuesses}
           currentGuess={isPlayerTurn ? guessInput : ''}
+          maxRows={6}
         />
 
         {/* Guess Input */}

@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useState, useCallback } from "react";
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { abi } from "../abi/abi.ts";
-import { WORDLE_CONTRACT_ADDRESS, PLAYER_1_ADDRESS, PLAYER_2_ADDRESS } from "../constant.ts";
+import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
 import { generateProof } from "../utils/generateProof.ts";
 import { GameStatus } from "./GameStatus";
 import { PlayerSection } from "./PlayerSection";
@@ -22,20 +22,13 @@ export function uint8ArrayToHex(buffer: Uint8Array): string {
 
 // Interfaces moved to separate components and hooks
 
-interface PlayerGuess {
-  word: string;
-  results?: string[];
-  isVerified: boolean;
-}
-
 export default function TwoPlayerGame() {
   const { data: hash, isPending, writeContract, error } = useWriteContract();
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
+  const { address: currentAccount } = useAccount();
 
   // State management
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
-  const [player1Guesses, setPlayer1Guesses] = useState<PlayerGuess[]>([]);
-  const [player2Guesses, setPlayer2Guesses] = useState<PlayerGuess[]>([]);
 
   // Utility functions
   const addLog = useCallback((message: string) => {
@@ -44,8 +37,8 @@ export default function TwoPlayerGame() {
   }, []);
 
   const getPlayerName = (address: string) => {
-    if (address.toLowerCase() === PLAYER_1_ADDRESS.toLowerCase()) return "Player 1";
-    if (address.toLowerCase() === PLAYER_2_ADDRESS.toLowerCase()) return "Player 2";
+    if (address.toLowerCase() === gameState.player1?.toLowerCase()) return "Player 1";
+    if (address.toLowerCase() === gameState.player2?.toLowerCase()) return "Player 2";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -54,72 +47,40 @@ export default function TwoPlayerGame() {
   };
 
   // Use the custom hook for game state management
-  const { gameState, guessHistory } = useGameState({
+  const { gameState, player1Board, player2Board } = useGameState({
     contractAddress: WORDLE_CONTRACT_ADDRESS,
     getPlayerName,
     addLog
   });
 
-  // Update player-specific guesses when guessHistory changes  
-  useEffect(() => {
-    // Build verified guesses from guessHistory
-    const player1Verified: PlayerGuess[] = [];
-    const player2Verified: PlayerGuess[] = [];
+  // Local board state for immediate updates
+  const [localPlayer1Guesses, setLocalPlayer1Guesses] = useState<Array<{word: string; results?: number[]; isVerified: boolean}>>([]);
+  const [localPlayer2Guesses, setLocalPlayer2Guesses] = useState<Array<{word: string; results?: number[]; isVerified: boolean}>>([]);
 
-    guessHistory.forEach(guess => {
-      console.log('Processing guessHistory item:', guess);
-      const playerGuess: PlayerGuess = {
-        word: guess.guess,
-        results: guess.results,
-        isVerified: true
-      };
-      console.log('Created playerGuess:', playerGuess);
+  // Combine local guesses with contract results
+  const finalPlayer1Board = [...localPlayer1Guesses];
+  const finalPlayer2Board = [...localPlayer2Guesses];
 
-      if (guess.player.toLowerCase() === gameState.player1?.toLowerCase()) {
-        console.log('Adding to player1Verified:', playerGuess);
-        player1Verified.push(playerGuess);
-      } else if (guess.player.toLowerCase() === gameState.player2?.toLowerCase()) {
-        console.log('Adding to player2Verified:', playerGuess);
-        player2Verified.push(playerGuess);
-      }
-    });
+  // Update with verified results from contract
+  player1Board.forEach(contractGuess => {
+    const index = finalPlayer1Board.findIndex(g => g.word === contractGuess.word);
+    if (index >= 0) {
+      // Update existing guess with verification results
+      const results = contractGuess.results?.map(r => typeof r === 'string' ? parseInt(r) : r);
+      finalPlayer1Board[index] = { ...contractGuess, results };
+    }
+  });
 
-    // Update player 1 guesses (replace unverified with verified, keep remaining unverified)
-    setPlayer1Guesses(prev => {
-      const result: PlayerGuess[] = [];
-      const verifiedWords = new Set(player1Verified.map(g => g.word));
-      
-      // Add all verified guesses first
-      result.push(...player1Verified);
-      
-      // Add unverified guesses that haven't been verified yet
-      prev.forEach(guess => {
-        if (!guess.isVerified && !verifiedWords.has(guess.word)) {
-          result.push(guess);
-        }
-      });
-      
-      return result;
-    });
+  player2Board.forEach(contractGuess => {
+    const index = finalPlayer2Board.findIndex(g => g.word === contractGuess.word);
+    if (index >= 0) {
+      // Update existing guess with verification results
+      const results = contractGuess.results?.map(r => typeof r === 'string' ? parseInt(r) : r);
+      finalPlayer2Board[index] = { ...contractGuess, results };
+    }
+  });
 
-    // Update player 2 guesses (replace unverified with verified, keep remaining unverified)
-    setPlayer2Guesses(prev => {
-      const result: PlayerGuess[] = [];
-      const verifiedWords = new Set(player2Verified.map(g => g.word));
-      
-      // Add all verified guesses first
-      result.push(...player2Verified);
-      
-      // Add unverified guesses that haven't been verified yet
-      prev.forEach(guess => {
-        if (!guess.isVerified && !verifiedWords.has(guess.word)) {
-          result.push(guess);
-        }
-      });
-      
-      return result;
-    });
-  }, [guessHistory]);
+
 
   // Game actions
   const handleGuess = async (guess: string) => {
@@ -136,16 +97,14 @@ export default function TwoPlayerGame() {
     try {
       addLog(`Making guess: "${guess.toUpperCase()}" 🎯`);
       
-      // Add unverified guess to the appropriate player's list
-      const newGuess: PlayerGuess = {
-        word: guess.toLowerCase(),
-        isVerified: false
-      };
-
-      if (isPlayer1Turn) {
-        setPlayer1Guesses(prev => [...prev, newGuess]);
-      } else if (isPlayer2Turn) {
-        setPlayer2Guesses(prev => [...prev, newGuess]);
+      // Immediately add the guess to the current player's board (unverified)
+      // This ensures the guess shows up on the board right away like real Wordle
+      const newGuess = { word: guess.toLowerCase(), isVerified: false };
+      
+      if (currentAccount?.toLowerCase() === gameState.player1?.toLowerCase()) {
+        setLocalPlayer1Guesses(prev => [...prev, newGuess]);
+      } else if (currentAccount?.toLowerCase() === gameState.player2?.toLowerCase()) {
+        setLocalPlayer2Guesses(prev => [...prev, newGuess]);
       }
       
       writeContract({
@@ -193,10 +152,10 @@ export default function TwoPlayerGame() {
   };
 
   // Game status helpers
-  const isPlayer1Turn = gameState.currentTurn.toLowerCase() === PLAYER_1_ADDRESS.toLowerCase();
-  const isPlayer2Turn = gameState.currentTurn.toLowerCase() === PLAYER_2_ADDRESS.toLowerCase();
-  const shouldPlayer1Verify = gameState.turnToVerify.toLowerCase() === PLAYER_1_ADDRESS.toLowerCase();
-  const shouldPlayer2Verify = gameState.turnToVerify.toLowerCase() === PLAYER_2_ADDRESS.toLowerCase();
+  const isPlayer1Turn = gameState.currentTurn.toLowerCase() === gameState.player1?.toLowerCase();
+  const isPlayer2Turn = gameState.currentTurn.toLowerCase() === gameState.player2?.toLowerCase();
+  const shouldPlayer1Verify = gameState.turnToVerify.toLowerCase() === gameState.player1?.toLowerCase();
+  const shouldPlayer2Verify = gameState.turnToVerify.toLowerCase() === gameState.player2?.toLowerCase();
   const gameStarted = gameState.player1 !== "" && gameState.player2 !== "" && 
                       gameState.player1 !== "0x0000000000000000000000000000000000000000" && 
                       gameState.player2 !== "0x0000000000000000000000000000000000000000";
@@ -242,7 +201,7 @@ export default function TwoPlayerGame() {
             isPending={isPending}
             isConfirming={isConfirming}
             isGeneratingProof={isGeneratingProof}
-            playerGuesses={player1Guesses}
+            playerGuesses={finalPlayer1Board}
             onGuess={handleGuess}
             onVerify={handleVerify}
           />
@@ -259,13 +218,11 @@ export default function TwoPlayerGame() {
             isPending={isPending}
             isConfirming={isConfirming}
             isGeneratingProof={isGeneratingProof}
-            playerGuesses={player2Guesses}
+            playerGuesses={finalPlayer2Board}
             onGuess={handleGuess}
             onVerify={handleVerify}
           />
         </div>
-
-
 
         {/* Transaction Status */}
         {(isPending || isConfirming) && (

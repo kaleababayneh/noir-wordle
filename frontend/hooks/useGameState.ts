@@ -27,6 +27,14 @@ interface GuessResult {
   results: string[];
 }
 
+interface PlayerBoard {
+  guesses: Array<{
+    word: string;
+    results?: string[];
+    isVerified: boolean;
+  }>;
+}
+
 interface UseGameStateProps {
   contractAddress: `0x${string}`;
   getPlayerName: (address: string) => string;
@@ -47,6 +55,8 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
 
   const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
   const [guessHistory, setGuessHistory] = useState<GuessResult[]>([]);
+  const [player1Board, setPlayer1Board] = useState<PlayerBoard>({ guesses: [] });
+  const [player2Board, setPlayer2Board] = useState<PlayerBoard>({ guesses: [] });
 
   // Contract reads for game state (with auto-refresh)
   const { data: currentTurn } = useReadContract({
@@ -121,6 +131,24 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         };
         setGameEvents(prev => [...prev, event]);
         addLog(`🎯 ${getPlayerName(player)} made a guess: "${guess}"`);
+        
+        // Add unverified guess to the appropriate player's board
+        const newGuess = { word: guess.toLowerCase(), isVerified: false };
+        console.log('NewGuess event:', { player, guess, player1, player2 });
+        
+        if (player1 && player.toLowerCase() === (player1 as string).toLowerCase()) {
+          console.log('Adding guess to player1 board:', newGuess);
+          setPlayer1Board(prev => ({
+            guesses: [...prev.guesses, newGuess]
+          }));
+        } else if (player2 && player.toLowerCase() === (player2 as string).toLowerCase()) {
+          console.log('Adding guess to player2 board:', newGuess);
+          setPlayer2Board(prev => ({
+            guesses: [...prev.guesses, newGuess]
+          }));
+        } else {
+          console.log('Could not match player to board:', { player, player1, player2 });
+        }
       });
     },
   });
@@ -187,6 +215,35 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
           
           return [...prev, { player: actualGuesser, guess, results: result }];
         });
+        
+        // Update the appropriate player's board with verification results
+        console.log('Updating board with verification results:', { actualGuesser, guess, result, player1, player2 });
+        
+        if (player1 && actualGuesser.toLowerCase() === (player1 as string).toLowerCase()) {
+          console.log('Updating player1 board with verification');
+          setPlayer1Board(prev => {
+            const updatedGuesses = prev.guesses.map(g => 
+              g.word === guess.toLowerCase() && !g.isVerified
+                ? { ...g, results: result, isVerified: true }
+                : g
+            );
+            console.log('Player1 board update:', { before: prev.guesses, after: updatedGuesses });
+            return { guesses: updatedGuesses };
+          });
+        } else if (player2 && actualGuesser.toLowerCase() === (player2 as string).toLowerCase()) {
+          console.log('Updating player2 board with verification');
+          setPlayer2Board(prev => {
+            const updatedGuesses = prev.guesses.map(g => 
+              g.word === guess.toLowerCase() && !g.isVerified
+                ? { ...g, results: result, isVerified: true }
+                : g
+            );
+            console.log('Player2 board update:', { before: prev.guesses, after: updatedGuesses });
+            return { guesses: updatedGuesses };
+          });
+        } else {
+          console.log('Could not match actualGuesser to player for verification:', { actualGuesser, player1, player2 });
+        }
         addLog(`📊 Verification complete for "${guess}" by ${getPlayerName(actualGuesser)}`);
       });
     },
@@ -246,6 +303,8 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
   return {
     gameState,
     gameEvents,
-    guessHistory
+    guessHistory,
+    player1Board: player1Board.guesses,
+    player2Board: player2Board.guesses
   };
 }
