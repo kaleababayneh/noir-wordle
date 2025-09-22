@@ -6,11 +6,6 @@ export const abi = [
                     "name": "_i_verifier",
                     "type": "address",
                     "internalType": "contract IVerifier"
-                },
-                {
-                    "name": "_word_commitment_hash1",
-                    "type": "bytes32[]",
-                    "internalType": "bytes32[]"
                 }
             ],
             "stateMutability": "nonpayable"
@@ -85,7 +80,12 @@ export const abi = [
             "name": "joinGame",
             "inputs": [
                 {
-                    "name": "_word_commitment_hash1",
+                    "name": "_player",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "_word_commitment_hashes",
                     "type": "bytes32[]",
                     "internalType": "bytes32[]"
                 }

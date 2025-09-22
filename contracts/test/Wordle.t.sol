@@ -27,9 +27,9 @@ contract WordleTest is Test {
         
 
         honkverifier = new HonkVerifier();
-        // Join the game as player 1
-        vm.prank(player1);
-        wordle = new Wordle(honkverifier, wordHash);
+        // Create empty game and join as player1
+        wordle = new Wordle(honkverifier);
+        wordle.joinGame(player1, wordHash);
     }
 
     function testJoinGame() public {
@@ -42,8 +42,7 @@ contract WordleTest is Test {
         wordHash2[3] = bytes32(0x20ddfc254a35314d202574123c02421788a45d4c1ff3491232b9494ea6193c84);
         wordHash2[4] = bytes32(0x1ea6c3a57c58edf4d20a808c96f4034e8fefa0bcedea27799ecfa8b7cdbafc90);
         
-        vm.prank(player2);
-        wordle.joinGame(wordHash2);
+        wordle.joinGame(player2, wordHash2);
         assertEq(wordle.player2(), player2);
     }
 

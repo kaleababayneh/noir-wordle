@@ -120,3 +120,34 @@ export async function fetchWordCommitmentHashes(): Promise<WordCommitmentResult>
     throw error;
   }
 }
+
+/**
+ * Generate commitment hashes for a word (for game creation)
+ * @param word - 5-letter word to generate commitments for
+ * @returns Array of commitment hashes
+ */
+export async function generateCommitmentHashes(word: string): Promise<`0x${string}`[]> {
+  if (word.length !== 5) {
+    throw new Error('Word must be exactly 5 letters');
+  }
+
+  const { generateSecureSalt, generateWordCommitment } = await import('./generateProof');
+  
+  try {
+    const salt = generateSecureSalt();
+    const commitmentHashes: `0x${string}`[] = [];
+    
+    for (let i = 0; i < 5; i++) {
+      const letter = word[i];
+      const letterCode = letter.charCodeAt(0);
+      const commitment = generateWordCommitment(letterCode, salt);
+      commitmentHashes.push(commitment as `0x${string}`);
+    }
+    
+    console.log(`Generated commitment hashes for word "${word}":`, commitmentHashes);
+    return commitmentHashes;
+  } catch (error) {
+    console.error('Error generating commitment hashes:', error);
+    throw error;
+  }
+}

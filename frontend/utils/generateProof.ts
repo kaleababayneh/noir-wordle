@@ -15,9 +15,15 @@ import { HARDCODED_VALUES } from './constants';
 import { ProofResult, CircuitInputs, LogFunction } from './types';
 
 
-function generateSecureSalt(): Fr {
+export function generateSecureSalt(): Fr {
   console.warn('Using hardcoded salt (0). Replace with secure random salt before deployment!');
   return new Fr(0n);
+}
+
+export function generateWordCommitment(letterCode: number, salt: Fr): string {
+  // This is a simplified commitment - in production, use proper cryptographic commitment
+  const commitment = new Fr(BigInt(letterCode) + BigInt(salt.toString()));
+  return `0x${BigInt(commitment.toString()).toString(16).padStart(64, '0')}`;
 }
 
 

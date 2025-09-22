@@ -27,7 +27,7 @@ contract JoinGame is Script {
         console.log("Player 2 address:", player2);
         console.log("Joining game...");
         
-        wordle.joinGame(wordHash2);
+        wordle.joinGame(msg.sender, wordHash2);
         
         console.log("Successfully joined the game!");
         console.log("Player 2:", wordle.player2());

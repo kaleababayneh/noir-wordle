@@ -36,36 +36,40 @@ contract Wordle {
         _;
     }
 
-    constructor(IVerifier _i_verifier, bytes32[] memory _word_commitment_hash1) {
+    constructor(IVerifier _i_verifier) {
         require(address(_i_verifier) != address(0), "Invalid verifier address");
-        require(_word_commitment_hash1.length == 5, "need 5 hashes");
-        require(msg.sender != address(0), "Invalid player");
-        
-        // Validate commitment hashes are not zero
-        for (uint i = 0; i < 5; i++) {
-            require(_word_commitment_hash1[i] != bytes32(0), "Invalid commitment hash");
-            word_commitment_hash1[i] = _word_commitment_hash1[i];
-        }
-        
         i_verifier = _i_verifier;
-        player1 = msg.sender;
-        emit Wordle__Player1Joined(msg.sender);
+        // player1 and player2 remain address(0) until they join via joinGame()
     }
 
 
-    function joinGame(bytes32[] memory _word_commitment_hash1) public onlyIfGameHasnotStarted{
-        require(msg.sender != address(0), "Invalid player");
-        require(msg.sender != player1, "Player 1 already joined");
-        require(_word_commitment_hash1.length == 5, "need 5 hashes");
+    function joinGame(address _player, bytes32[] memory _word_commitment_hashes) public onlyIfGameHasnotStarted{
+        require(_player != address(0), "Invalid player");
+        require(_word_commitment_hashes.length == 5, "need 5 hashes");
+        require(_player != player1 && _player != player2, "Player already joined");
 
         // Validate commitment hashes are not zero
         for (uint i = 0; i < 5; i++) {
-            require(_word_commitment_hash1[i] != bytes32(0), "Invalid commitment hash");
-            word_commitment_hash2[i] = _word_commitment_hash1[i];
+            require(_word_commitment_hashes[i] != bytes32(0), "Invalid commitment hash");
         }
-        
-        player2 = msg.sender;
-        emit Wordle__Player2Joined(msg.sender);
+
+        if (player1 == address(0)) {
+            // First player to join becomes player1
+            for (uint i = 0; i < 5; i++) {
+                word_commitment_hash1[i] = _word_commitment_hashes[i];
+            }
+            player1 = _player;
+            emit Wordle__Player1Joined(_player);
+        } else if (player2 == address(0)) {
+            // Second player to join becomes player2
+            for (uint i = 0; i < 5; i++) {
+                word_commitment_hash2[i] = _word_commitment_hashes[i];
+            }
+            player2 = _player;
+            emit Wordle__Player2Joined(_player);
+        } else {
+            revert("Game is already full");
+        }
     }
 
     function guess(string memory guess_word) public onlyIfGameNotOver {

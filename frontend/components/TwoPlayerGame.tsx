@@ -7,6 +7,11 @@ import { GameStatus } from "./GameStatus";
 import { PlayerSection } from "./PlayerSection";
 import { useGameState } from "../hooks/useGameState";
 
+interface TwoPlayerGameProps {
+  gameContract?: string;
+  onBackToLobby?: () => void;
+}
+
 // taken from @aztec/bb.js/proof
 export function uint8ArrayToHex(buffer: Uint8Array): string {
   const hex: string[] = [];
@@ -22,7 +27,7 @@ export function uint8ArrayToHex(buffer: Uint8Array): string {
 
 // Interfaces moved to separate components and hooks
 
-export default function TwoPlayerGame() {
+export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {}) {
   const { data: hash, isPending, writeContract, error } = useWriteContract();
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
   const { address: currentAccount } = useAccount();
@@ -48,7 +53,7 @@ export default function TwoPlayerGame() {
 
   // Use the custom hook for game state management
   const { gameState, player1Board, player2Board } = useGameState({
-    contractAddress: WORDLE_CONTRACT_ADDRESS,
+    contractAddress: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
     getPlayerName,
     addLog
   });
@@ -157,7 +162,7 @@ export default function TwoPlayerGame() {
       }
       
       writeContract({
-        address: WORDLE_CONTRACT_ADDRESS,
+        address: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
         abi: abi,
         functionName: 'guess',
         args: [guess.toLowerCase()],
@@ -187,7 +192,7 @@ export default function TwoPlayerGame() {
       addLog(`🔍 Results being submitted: ${results}`);
 
       writeContract({
-        address: WORDLE_CONTRACT_ADDRESS,
+        address: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
         abi: abi,
         functionName: 'verify_guess',
         args: [`0x${uint8ArrayToHex(proof)}`, results],

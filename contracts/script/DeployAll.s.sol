@@ -23,10 +23,10 @@ contract DeployAll is Script {
         wordCommitmentHash[4] = 0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00;
         
         // Deploy Wordle with the verifier
-        Wordle wordle = new Wordle(
-            IVerifier(address(verifier)),
-            wordCommitmentHash
-        );
+        Wordle wordle = new Wordle(IVerifier(address(verifier)));
+        
+        // Creator joins the game as player1
+        wordle.joinGame(msg.sender, wordCommitmentHash);
         
         console.log("Wordle deployed at:", address(wordle));
         
