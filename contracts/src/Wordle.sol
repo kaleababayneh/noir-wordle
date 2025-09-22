@@ -22,7 +22,7 @@ contract Wordle {
 
     event Wordle__NewGuess(address indexed player, string indexed guess);
     event Wordle__CorrectGuess(address indexed player, string indexed guess);
-    event Wordle__GuessResult(address indexed player, string indexed guess, bytes32[] result);
+    event Wordle__GuessResult(address indexed player, string indexed guess, bytes32[] indexed result);
 
     error Wordle__InvalidProof();
 

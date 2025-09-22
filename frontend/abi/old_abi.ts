@@ -252,7 +252,7 @@ export const abi = [
                 {
                     "name": "result",
                     "type": "bytes32[]",
-                    "indexed": false,
+                    "indexed": true,
                     "internalType": "bytes32[]"
                 }
             ],
