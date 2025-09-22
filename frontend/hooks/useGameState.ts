@@ -159,25 +159,37 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
     eventName: 'Wordle__GuessResult',
     onLogs(logs) {
       logs.forEach((log) => {
-        const { player, guess, result } = log.args as { player: string; guess: string; result: string[] };
+        const { player, guess, result } = log.args as { player: string; guess: string; result: `0x${string}`[] };
         
-        // WORKAROUND: The contract emits the wrong player (next to play instead of guesser)
+        // Convert bytes32[] to number[] - bytes32 values are like 0x000...002 for the number 2
+        const numericResults = result.map(r => {
+          const num = parseInt(r, 16);
+          console.log(`Converting bytes32 ${r} to ${num}`);
+          // Ensure we only get valid Wordle results (0, 1, 2)
+          if (num < 0 || num > 2) {
+            console.warn(`Invalid Wordle result: ${num} from ${r}`);
+            return 0; // Default to "not in word"
+          }
+          return num;
+        });
+        
+        // WORKAROUND: The contract emits the wrong player (next to play instead of guesser)  
         // We need to infer the actual guesser from the current verifier attempts
-        // The logic: if verifier_attempts goes from N to N+1, then:
-        // - If N was even, Player 2 was verifying, so Player 1 made the guess
-        // - If N was odd, Player 1 was verifying, so Player 2 made the guess
+        // The logic: verifier_attempts tracks how many verifications have been completed
+        // - If verifier_attempts = 1 (odd), Player 2 just verified Player 1's guess
+        // - If verifier_attempts = 2 (even), Player 1 just verified Player 2's guess
         
-        // Get current verifier attempts count to determine who verified
+        // Get current verifier attempts count to determine who made the guess
         const currentVerifierAttempts = Number(verifierAttempts) || 0;
         
         // Determine who made the guess being verified
         let actualGuesser: string;
         if (currentVerifierAttempts % 2 === 1) {
-          // Odd verifier attempts means Player 1 just verified, so Player 2 made the guess
-          actualGuesser = player2 as string || '';
-        } else {
-          // Even verifier attempts means Player 2 just verified, so Player 1 made the guess  
+          // Odd verifier attempts means Player 2 just verified, so Player 1 made the guess
           actualGuesser = player1 as string || '';
+        } else {
+          // Even verifier attempts means Player 1 just verified, so Player 2 made the guess  
+          actualGuesser = player2 as string || '';
         }
         
         // Fallback to event player if we can't determine the addresses
@@ -185,18 +197,22 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
           actualGuesser = player;
         }
         
-        console.log('Corrected GuessResult:', { 
+        console.log('🔍 GuessResult Event Analysis:', { 
           eventPlayer: player, 
-          actualGuesser,
-          guess, 
-          verifierAttempts: currentVerifierAttempts
+          correctedActualGuesser: actualGuesser,
+          hashedGuess: guess, 
+          rawResult: result,
+          decodedResults: numericResults,
+          currentVerifierAttempts: currentVerifierAttempts,
+          player1Address: player1,
+          player2Address: player2
         });
         
         const event: GameEvent = {
           type: 'result',
           player: actualGuesser,
           guess,
-          results: result,
+          results: numericResults.map(String), // Convert to string array for consistency
           timestamp: new Date()
         };
         setGameEvents(prev => [...prev, event]);
@@ -205,41 +221,77 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
           const exists = prev.some(existing => 
             existing.player.toLowerCase() === actualGuesser.toLowerCase() && 
             existing.guess === guess &&
-            JSON.stringify(existing.results) === JSON.stringify(result)
+            JSON.stringify(existing.results) === JSON.stringify(numericResults)
           );
           
           if (exists) {
-            console.log('Duplicate guess result detected, skipping:', { player: actualGuesser, guess, result });
+            console.log('Duplicate guess result detected, skipping:', { player: actualGuesser, guess, numericResults });
             return prev;
           }
           
-          return [...prev, { player: actualGuesser, guess, results: result }];
+          return [...prev, { player: actualGuesser, guess, results: numericResults.map(String) }];
         });
         
         // Update the appropriate player's board with verification results
-        console.log('Updating board with verification results:', { actualGuesser, guess, result, player1, player2 });
+        console.log('Updating board with verification results:', { actualGuesser, guess, numericResults, player1, player2 });
         
         if (player1 && actualGuesser.toLowerCase() === (player1 as string).toLowerCase()) {
           console.log('Updating player1 board with verification');
           setPlayer1Board(prev => {
-            const updatedGuesses = prev.guesses.map(g => 
-              g.word === guess.toLowerCase() && !g.isVerified
-                ? { ...g, results: result, isVerified: true }
-                : g
+            // Find the exact matching guess by word (now that guess is unhashed)
+            const matchingGuessIndex = prev.guesses.findIndex(g => 
+              g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
             );
-            console.log('Player1 board update:', { before: prev.guesses, after: updatedGuesses });
-            return { guesses: updatedGuesses };
+            console.log('Found matching guess for player1 at index:', matchingGuessIndex);
+            
+            if (matchingGuessIndex !== -1) {
+              const updatedGuesses = [...prev.guesses];
+              updatedGuesses[matchingGuessIndex] = { 
+                ...updatedGuesses[matchingGuessIndex], 
+                results: numericResults.map(String), 
+                isVerified: true 
+              };
+              console.log('✅ Player1 board updated with colors:', { 
+                beforeCount: prev.guesses.length,
+                afterCount: updatedGuesses.length,
+                verifiedCount: updatedGuesses.filter(g => g.isVerified).length,
+                results: numericResults,
+                updatedGuess: updatedGuesses[matchingGuessIndex]
+              });
+              return { guesses: updatedGuesses };
+            } else {
+              console.log('No matching unverified guess found for player1:', { guess, existingGuesses: prev.guesses });
+              return prev;
+            }
           });
         } else if (player2 && actualGuesser.toLowerCase() === (player2 as string).toLowerCase()) {
           console.log('Updating player2 board with verification');
           setPlayer2Board(prev => {
-            const updatedGuesses = prev.guesses.map(g => 
-              g.word === guess.toLowerCase() && !g.isVerified
-                ? { ...g, results: result, isVerified: true }
-                : g
+            // Find the exact matching guess by word (now that guess is unhashed)
+            const matchingGuessIndex = prev.guesses.findIndex(g => 
+              g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
             );
-            console.log('Player2 board update:', { before: prev.guesses, after: updatedGuesses });
-            return { guesses: updatedGuesses };
+            console.log('Found matching guess for player2 at index:', matchingGuessIndex);
+            
+            if (matchingGuessIndex !== -1) {
+              const updatedGuesses = [...prev.guesses];
+              updatedGuesses[matchingGuessIndex] = { 
+                ...updatedGuesses[matchingGuessIndex], 
+                results: numericResults.map(String), 
+                isVerified: true 
+              };
+              console.log('✅ Player2 board updated with colors:', { 
+                beforeCount: prev.guesses.length,
+                afterCount: updatedGuesses.length,
+                verifiedCount: updatedGuesses.filter(g => g.isVerified).length,
+                results: numericResults,
+                updatedGuess: updatedGuesses[matchingGuessIndex]
+              });
+              return { guesses: updatedGuesses };
+            } else {
+              console.log('No matching unverified guess found for player2:', { guess, existingGuesses: prev.guesses });
+              return prev;
+            }
           });
         } else {
           console.log('Could not match actualGuesser to player for verification:', { actualGuesser, player1, player2 });

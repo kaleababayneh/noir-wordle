@@ -1,4 +1,4 @@
-export const WORDLE_CONTRACT_ADDRESS = "0x9fB3B0F858FaA11B4D43b37C2B81EBbB14Ff9FAa" // Wordle contract address
+export const WORDLE_CONTRACT_ADDRESS = "0x64b8D9240305F1c5A00d0AAF7C575f51030681ac" // Updated Wordle contract address with fixed events
 
 // // Player addresses derived from private keys
 // export const PLAYER_1_ADDRESS = "0x532581141fA3a833090F95eBB76aCEa8Eaf9dD7d"

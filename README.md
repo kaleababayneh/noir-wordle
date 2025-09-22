@@ -34,3 +34,8 @@ cast call 0xb509d73A10255E2Eb0b74720d257ECDd7C2d6153 "last_guess()" --rpc-url ht
 
 
 echo "=== NEW GAME STATE ===" && echo "Player 1:" && cast call 0x155E78fb3b3D7995B1d56B7A4C0894f7eBDE4002 "player1()" --rpc-url https://sepolia.gateway.tenderly.co && echo "Player 2:" && cast call 0x155E78fb3b3D7995B1d56B7A4C0894f7eBDE4002 "player2()" --rpc-url https://sepolia.gateway.tenderly.co && echo "Current turn:" && cast call 0x155E78fb3b3D7995B1d56B7A4C0894f7eBDE4002 "getTurn()" --rpc-url https://sepolia.gateway.tenderly.co
+
+
+
+kaleab@Kaleabs-MacBook-Air contracts % forge script script/DeployAll.s.sol --rpc-url https://eth-sepoli
+a.g.alchemy.com/v2/yfYMfVW6oD82nAyfAQmuz --private-key xx --broadcast

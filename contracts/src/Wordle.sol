@@ -20,9 +20,9 @@ contract Wordle {
     event Wordle__Player1Joined(address indexed player1);
     event Wordle__Player2Joined(address indexed player2);
 
-    event Wordle__NewGuess(address indexed player, string indexed guess);
-    event Wordle__CorrectGuess(address indexed player, string indexed guess);
-    event Wordle__GuessResult(address indexed player, string indexed guess, bytes32[] indexed result);
+    event Wordle__NewGuess(address indexed player, string guess);
+    event Wordle__CorrectGuess(address indexed player, string guess);
+    event Wordle__GuessResult(address indexed player, string guess, bytes32[] result);
 
     error Wordle__InvalidProof();
 

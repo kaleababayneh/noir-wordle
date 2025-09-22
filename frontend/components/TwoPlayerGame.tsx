@@ -53,32 +53,76 @@ export default function TwoPlayerGame() {
     addLog
   });
 
-  // Local board state for immediate updates
-  const [localPlayer1Guesses, setLocalPlayer1Guesses] = useState<Array<{word: string; results?: number[]; isVerified: boolean}>>([]);
-  const [localPlayer2Guesses, setLocalPlayer2Guesses] = useState<Array<{word: string; results?: number[]; isVerified: boolean}>>([]);
-
-  // Combine local guesses with contract results
-  const finalPlayer1Board = [...localPlayer1Guesses];
-  const finalPlayer2Board = [...localPlayer2Guesses];
-
-  // Update with verified results from contract
-  player1Board.forEach(contractGuess => {
-    const index = finalPlayer1Board.findIndex(g => g.word === contractGuess.word);
-    if (index >= 0) {
-      // Update existing guess with verification results
-      const results = contractGuess.results?.map(r => typeof r === 'string' ? parseInt(r) : r);
-      finalPlayer1Board[index] = { ...contractGuess, results };
-    }
+  // Local state for immediate guess feedback (UX)
+  const [pendingGuesses, setPendingGuesses] = useState<{
+    player1: Array<{word: string; isVerified: boolean}>;
+    player2: Array<{word: string; isVerified: boolean}>;
+  }>({
+    player1: [],
+    player2: []
   });
 
-  player2Board.forEach(contractGuess => {
-    const index = finalPlayer2Board.findIndex(g => g.word === contractGuess.word);
-    if (index >= 0) {
-      // Update existing guess with verification results
-      const results = contractGuess.results?.map(r => typeof r === 'string' ? parseInt(r) : r);
-      finalPlayer2Board[index] = { ...contractGuess, results };
-    }
+  // Hybrid board system: Pending local state + Contract verification results
+  const createHybridBoard = (contractBoard: any[], playerKey: 'player1' | 'player2') => {
+    const pending = pendingGuesses[playerKey];
+    const hybrid: any[] = [];
+    
+    // Start with all pending guesses (these provide the chronological order)
+    pending.forEach(pendingGuess => {
+      // Check if this guess has verification results from contract
+      const contractResult = contractBoard.find(contractGuess => 
+        contractGuess.word.toLowerCase() === pendingGuess.word.toLowerCase()
+      );
+      
+      if (contractResult) {
+        // This guess has been verified - use contract results
+        hybrid.push({
+          word: pendingGuess.word,
+          isVerified: true,
+          results: contractResult.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+        });
+      } else {
+        // This guess is still pending verification
+        hybrid.push({
+          word: pendingGuess.word,
+          isVerified: false,
+          results: undefined
+        });
+      }
+    });
+    
+    // Add any contract guesses that aren't in pending (shouldn't happen normally)
+    contractBoard.forEach(contractGuess => {
+      const existsInPending = pending.some(pendingGuess => 
+        pendingGuess.word.toLowerCase() === contractGuess.word.toLowerCase()
+      );
+      if (!existsInPending) {
+        hybrid.push({
+          word: contractGuess.word,
+          isVerified: contractGuess.isVerified,
+          results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+        });
+      }
+    });
+    
+    return hybrid;
+  };
+
+  const finalPlayer1Board = createHybridBoard(player1Board, 'player1');
+  const finalPlayer2Board = createHybridBoard(player2Board, 'player2');
+
+  // Debug logging for hybrid board approach
+  console.log('TwoPlayerGame hybrid board system:', {
+    contractPlayer1Board: player1Board,
+    contractPlayer2Board: player2Board,
+    pendingPlayer1: pendingGuesses.player1,
+    pendingPlayer2: pendingGuesses.player2,
+    finalPlayer1Board,
+    finalPlayer2Board
   });
+
+  // No cleanup needed - pending guesses stay to maintain chronological order
+  // Verification results are merged in createHybridBoard()
 
 
 
@@ -97,14 +141,19 @@ export default function TwoPlayerGame() {
     try {
       addLog(`Making guess: "${guess.toUpperCase()}" 🎯`);
       
-      // Immediately add the guess to the current player's board (unverified)
-      // This ensures the guess shows up on the board right away like real Wordle
+      // Immediately add to local state for instant UX feedback
       const newGuess = { word: guess.toLowerCase(), isVerified: false };
       
       if (currentAccount?.toLowerCase() === gameState.player1?.toLowerCase()) {
-        setLocalPlayer1Guesses(prev => [...prev, newGuess]);
+        setPendingGuesses(prev => ({
+          ...prev,
+          player1: [...prev.player1, newGuess]
+        }));
       } else if (currentAccount?.toLowerCase() === gameState.player2?.toLowerCase()) {
-        setLocalPlayer2Guesses(prev => [...prev, newGuess]);
+        setPendingGuesses(prev => ({
+          ...prev,
+          player2: [...prev.player2, newGuess]
+        }));
       }
       
       writeContract({

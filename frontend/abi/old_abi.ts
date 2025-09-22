@@ -227,7 +227,7 @@ export const abi = [
                 {
                     "name": "guess",
                     "type": "string",
-                    "indexed": true,
+                    "indexed": false,
                     "internalType": "string"
                 }
             ],
@@ -246,13 +246,13 @@ export const abi = [
                 {
                     "name": "guess",
                     "type": "string",
-                    "indexed": true,
+                    "indexed": false,
                     "internalType": "string"
                 },
                 {
                     "name": "result",
                     "type": "bytes32[]",
-                    "indexed": true,
+                    "indexed": false,
                     "internalType": "bytes32[]"
                 }
             ],
@@ -271,7 +271,7 @@ export const abi = [
                 {
                     "name": "guess",
                     "type": "string",
-                    "indexed": true,
+                    "indexed": false,
                     "internalType": "string"
                 }
             ],

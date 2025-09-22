@@ -49,7 +49,7 @@ export function WordleGrid({
   // Create grid rows
   const rows = [];
   
-  // Add completed guesses (verified or unverified)  
+  // Render each row based on its own verification state
   for (let i = 0; i < guesses.length && i < maxRows; i++) {
     const guess = guesses[i];
     const cells = [];
@@ -61,6 +61,9 @@ export function WordleGrid({
         letter = guess.word[j] || '';
       }
       
+      // Each cell gets colored based on its own row's verification state
+      // - If verified: use results[j] for coloring (0=gray, 1=yellow, 2=green)  
+      // - If not verified: undefined = shows as unverified (white background)
       const result = guess.isVerified ? guess.results?.[j] : undefined;
       
       cells.push(
@@ -74,7 +77,7 @@ export function WordleGrid({
     }
     
     rows.push(
-      <div key={`row-${i}-${guess.word}-${guess.isVerified}`} className="flex gap-1 justify-center">
+      <div key={`row-${i}-${guess.word}-${guess.isVerified}-${JSON.stringify(guess.results)}`} className="flex gap-1 justify-center">
         {cells}
       </div>
     );
