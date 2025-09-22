@@ -132,16 +132,62 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
     onLogs(logs) {
       logs.forEach((log) => {
         const { player, guess, result } = log.args as { player: string; guess: string; result: string[] };
+        
+        // WORKAROUND: The contract emits the wrong player (next to play instead of guesser)
+        // We need to infer the actual guesser from the current verifier attempts
+        // The logic: if verifier_attempts goes from N to N+1, then:
+        // - If N was even, Player 2 was verifying, so Player 1 made the guess
+        // - If N was odd, Player 1 was verifying, so Player 2 made the guess
+        
+        // Get current verifier attempts count to determine who verified
+        const currentVerifierAttempts = Number(verifierAttempts) || 0;
+        
+        // Determine who made the guess being verified
+        let actualGuesser: string;
+        if (currentVerifierAttempts % 2 === 1) {
+          // Odd verifier attempts means Player 1 just verified, so Player 2 made the guess
+          actualGuesser = player2 as string || '';
+        } else {
+          // Even verifier attempts means Player 2 just verified, so Player 1 made the guess  
+          actualGuesser = player1 as string || '';
+        }
+        
+        // Fallback to event player if we can't determine the addresses
+        if (!actualGuesser || actualGuesser === '0x0000000000000000000000000000000000000000') {
+          actualGuesser = player;
+        }
+        
+        console.log('Corrected GuessResult:', { 
+          eventPlayer: player, 
+          actualGuesser,
+          guess, 
+          verifierAttempts: currentVerifierAttempts
+        });
+        
         const event: GameEvent = {
           type: 'result',
-          player,
+          player: actualGuesser,
           guess,
           results: result,
           timestamp: new Date()
         };
         setGameEvents(prev => [...prev, event]);
-        setGuessHistory(prev => [...prev, { player, guess, results: result }]);
-        addLog(`📊 Verification complete for "${guess}" by ${getPlayerName(player)}`);
+        setGuessHistory(prev => {
+          // Check if this guess result already exists to avoid duplicates
+          const exists = prev.some(existing => 
+            existing.player.toLowerCase() === actualGuesser.toLowerCase() && 
+            existing.guess === guess &&
+            JSON.stringify(existing.results) === JSON.stringify(result)
+          );
+          
+          if (exists) {
+            console.log('Duplicate guess result detected, skipping:', { player: actualGuesser, guess, result });
+            return prev;
+          }
+          
+          return [...prev, { player: actualGuesser, guess, results: result }];
+        });
+        addLog(`📊 Verification complete for "${guess}" by ${getPlayerName(actualGuesser)}`);
       });
     },
   });

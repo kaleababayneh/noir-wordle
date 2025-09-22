@@ -1,12 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS, PLAYER_1_ADDRESS, PLAYER_2_ADDRESS } from "../constant.ts";
 import { generateProof } from "../utils/generateProof.ts";
 import { GameStatus } from "./GameStatus";
 import { PlayerSection } from "./PlayerSection";
-import { GuessHistory } from "./GuessHistory";
-import { ActivityLog } from "./ActivityLog";
 import { useGameState } from "../hooks/useGameState";
 
 // taken from @aztec/bb.js/proof
@@ -24,17 +22,25 @@ export function uint8ArrayToHex(buffer: Uint8Array): string {
 
 // Interfaces moved to separate components and hooks
 
+interface PlayerGuess {
+  word: string;
+  results?: string[];
+  isVerified: boolean;
+}
+
 export default function TwoPlayerGame() {
   const { data: hash, isPending, writeContract, error } = useWriteContract();
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
   // State management
-  const [logs, setLogs] = useState<string[]>([]);
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
+  const [player1Guesses, setPlayer1Guesses] = useState<PlayerGuess[]>([]);
+  const [player2Guesses, setPlayer2Guesses] = useState<PlayerGuess[]>([]);
 
   // Utility functions
   const addLog = useCallback((message: string) => {
-    setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+    // Log disabled for cleaner UI
+    console.log(message);
   }, []);
 
   const getPlayerName = (address: string) => {
@@ -54,6 +60,67 @@ export default function TwoPlayerGame() {
     addLog
   });
 
+  // Update player-specific guesses when guessHistory changes  
+  useEffect(() => {
+    // Build verified guesses from guessHistory
+    const player1Verified: PlayerGuess[] = [];
+    const player2Verified: PlayerGuess[] = [];
+
+    guessHistory.forEach(guess => {
+      console.log('Processing guessHistory item:', guess);
+      const playerGuess: PlayerGuess = {
+        word: guess.guess,
+        results: guess.results,
+        isVerified: true
+      };
+      console.log('Created playerGuess:', playerGuess);
+
+      if (guess.player.toLowerCase() === gameState.player1?.toLowerCase()) {
+        console.log('Adding to player1Verified:', playerGuess);
+        player1Verified.push(playerGuess);
+      } else if (guess.player.toLowerCase() === gameState.player2?.toLowerCase()) {
+        console.log('Adding to player2Verified:', playerGuess);
+        player2Verified.push(playerGuess);
+      }
+    });
+
+    // Update player 1 guesses (replace unverified with verified, keep remaining unverified)
+    setPlayer1Guesses(prev => {
+      const result: PlayerGuess[] = [];
+      const verifiedWords = new Set(player1Verified.map(g => g.word));
+      
+      // Add all verified guesses first
+      result.push(...player1Verified);
+      
+      // Add unverified guesses that haven't been verified yet
+      prev.forEach(guess => {
+        if (!guess.isVerified && !verifiedWords.has(guess.word)) {
+          result.push(guess);
+        }
+      });
+      
+      return result;
+    });
+
+    // Update player 2 guesses (replace unverified with verified, keep remaining unverified)
+    setPlayer2Guesses(prev => {
+      const result: PlayerGuess[] = [];
+      const verifiedWords = new Set(player2Verified.map(g => g.word));
+      
+      // Add all verified guesses first
+      result.push(...player2Verified);
+      
+      // Add unverified guesses that haven't been verified yet
+      prev.forEach(guess => {
+        if (!guess.isVerified && !verifiedWords.has(guess.word)) {
+          result.push(guess);
+        }
+      });
+      
+      return result;
+    });
+  }, [guessHistory]);
+
   // Game actions
   const handleGuess = async (guess: string) => {
     if (!guess || guess.length !== 5) {
@@ -68,6 +135,18 @@ export default function TwoPlayerGame() {
 
     try {
       addLog(`Making guess: "${guess.toUpperCase()}" 🎯`);
+      
+      // Add unverified guess to the appropriate player's list
+      const newGuess: PlayerGuess = {
+        word: guess.toLowerCase(),
+        isVerified: false
+      };
+
+      if (isPlayer1Turn) {
+        setPlayer1Guesses(prev => [...prev, newGuess]);
+      } else if (isPlayer2Turn) {
+        setPlayer2Guesses(prev => [...prev, newGuess]);
+      }
       
       writeContract({
         address: WORDLE_CONTRACT_ADDRESS,
@@ -163,6 +242,7 @@ export default function TwoPlayerGame() {
             isPending={isPending}
             isConfirming={isConfirming}
             isGeneratingProof={isGeneratingProof}
+            playerGuesses={player1Guesses}
             onGuess={handleGuess}
             onVerify={handleVerify}
           />
@@ -179,16 +259,13 @@ export default function TwoPlayerGame() {
             isPending={isPending}
             isConfirming={isConfirming}
             isGeneratingProof={isGeneratingProof}
+            playerGuesses={player2Guesses}
             onGuess={handleGuess}
             onVerify={handleVerify}
           />
         </div>
 
-        {/* Game History and Events */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <GuessHistory guessHistory={guessHistory} getPlayerName={getPlayerName} />
-          <ActivityLog logs={logs} />
-        </div>
+
 
         {/* Transaction Status */}
         {(isPending || isConfirming) && (

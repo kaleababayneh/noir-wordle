@@ -1,4 +1,11 @@
 import { useState } from 'react';
+import { WordleGrid } from './WordleGrid';
+
+interface GuessResult {
+  word: string;
+  results?: string[];
+  isVerified: boolean;
+}
 
 interface PlayerSectionProps {
   playerNumber: 1 | 2;
@@ -11,6 +18,7 @@ interface PlayerSectionProps {
   isPending: boolean;
   isConfirming: boolean;
   isGeneratingProof: boolean;
+  playerGuesses: GuessResult[];
   onGuess: (guess: string) => void;
   onVerify: () => void;
 }
@@ -26,6 +34,7 @@ export function PlayerSection({
   isPending,
   isConfirming,
   isGeneratingProof,
+  playerGuesses,
   onGuess,
   onVerify
 }: PlayerSectionProps) {
@@ -59,7 +68,14 @@ export function PlayerSection({
         </div>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Wordle Grid */}
+        <WordleGrid
+          playerNumber={playerNumber}
+          guesses={playerGuesses}
+          currentGuess={isPlayerTurn ? guessInput : ''}
+        />
+
         {/* Guess Input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
