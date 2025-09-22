@@ -9,6 +9,10 @@ export const config = createConfig({
     metaMask(),
   ],
   transports: {
-    [sepolia.id]: http(rpcUrl),
+    [sepolia.id]: http(rpcUrl, {
+      batch: true, // Enable request batching for better performance
+      retryCount: 3, // Retry failed requests
+      retryDelay: 1000, // 1 second retry delay
+    }),
   },
 })

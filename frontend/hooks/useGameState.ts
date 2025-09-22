@@ -91,28 +91,28 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
     address: contractAddress,
     abi: abi,
     functionName: 'verifier_attempts',
-    query: { refetchInterval: 1000 }
+    query: { refetchInterval: 500 } // Faster for game-critical data
   });
 
   const { data: winner } = useReadContract({
     address: contractAddress,
     abi: abi,
     functionName: 'winner',
-    query: { refetchInterval: 1000 }
+    query: { refetchInterval: 2000 } // Moderate frequency for winner status
   });
 
   const { data: player1 } = useReadContract({
     address: contractAddress,
     abi: abi,
     functionName: 'player1',
-    query: { refetchInterval: 1000 }
+    query: { refetchInterval: 5000 } // Less frequent - players don't change often
   });
 
   const { data: player2 } = useReadContract({
     address: contractAddress,
     abi: abi,
     functionName: 'player2',
-    query: { refetchInterval: 1000 }
+    query: { refetchInterval: 5000 } // Less frequent - players don't change often
   });
 
   // Event listeners for real-time updates
@@ -164,7 +164,7 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         // Convert bytes32[] to number[] - bytes32 values are like 0x000...002 for the number 2
         const numericResults = result.map(r => {
           const num = parseInt(r, 16);
-          console.log(`Converting bytes32 ${r} to ${num}`);
+          // console.log(`Converting bytes32 ${r} to ${num}`);
           // Ensure we only get valid Wordle results (0, 1, 2)
           if (num < 0 || num > 2) {
             console.warn(`Invalid Wordle result: ${num} from ${r}`);
@@ -197,16 +197,16 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
           actualGuesser = player;
         }
         
-        console.log('🔍 GuessResult Event Analysis:', { 
-          eventPlayer: player, 
-          correctedActualGuesser: actualGuesser,
-          hashedGuess: guess, 
-          rawResult: result,
-          decodedResults: numericResults,
-          currentVerifierAttempts: currentVerifierAttempts,
-          player1Address: player1,
-          player2Address: player2
-        });
+        // console.log('🔍 GuessResult Event Analysis:', { 
+        //   eventPlayer: player, 
+        //   correctedActualGuesser: actualGuesser,
+        //   hashedGuess: guess, 
+        //   rawResult: result,
+        //   decodedResults: numericResults,
+        //   currentVerifierAttempts: currentVerifierAttempts,
+        //   player1Address: player1,
+        //   player2Address: player2
+        // });
         
         const event: GameEvent = {
           type: 'result',
@@ -233,7 +233,7 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         });
         
         // Update the appropriate player's board with verification results
-        console.log('Updating board with verification results:', { actualGuesser, guess, numericResults, player1, player2 });
+        // console.log('Updating board with verification results:', { actualGuesser, guess, numericResults, player1, player2 });
         
         if (player1 && actualGuesser.toLowerCase() === (player1 as string).toLowerCase()) {
           console.log('Updating player1 board with verification');

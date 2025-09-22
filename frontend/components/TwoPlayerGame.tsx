@@ -111,15 +111,15 @@ export default function TwoPlayerGame() {
   const finalPlayer1Board = createHybridBoard(player1Board, 'player1');
   const finalPlayer2Board = createHybridBoard(player2Board, 'player2');
 
-  // Debug logging for hybrid board approach
-  console.log('TwoPlayerGame hybrid board system:', {
-    contractPlayer1Board: player1Board,
-    contractPlayer2Board: player2Board,
-    pendingPlayer1: pendingGuesses.player1,
-    pendingPlayer2: pendingGuesses.player2,
-    finalPlayer1Board,
-    finalPlayer2Board
-  });
+  // Debug logging for hybrid board approach (reduced frequency)
+  // console.log('TwoPlayerGame hybrid board system:', {
+  //   contractPlayer1Board: player1Board,
+  //   contractPlayer2Board: player2Board,
+  //   pendingPlayer1: pendingGuesses.player1,
+  //   pendingPlayer2: pendingGuesses.player2,
+  //   finalPlayer1Board,
+  //   finalPlayer2Board
+  // });
 
   // No cleanup needed - pending guesses stay to maintain chronological order
   // Verification results are merged in createHybridBoard()

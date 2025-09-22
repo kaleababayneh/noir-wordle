@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface WordleGridProps {
   playerNumber: 1 | 2;
   guesses: Array<{
@@ -9,14 +11,14 @@ interface WordleGridProps {
   maxRows?: number;
 }
 
-export function WordleGrid({ 
+export const WordleGrid = memo(function WordleGrid({ 
   playerNumber, 
   guesses, 
   currentGuess = "",
   maxRows = 6 
 }: WordleGridProps) {
-  // Debug logging
-  console.log(`Player ${playerNumber} WordleGrid guesses:`, guesses);
+  // Debug logging (reduce frequency)
+  // console.log(`Player ${playerNumber} WordleGrid guesses:`, guesses);
   
     // Helper function to get cell styling based on result
   const getCellStyling = (result?: string | number, hasLetter: boolean = false) => {
@@ -141,4 +143,4 @@ export function WordleGrid({
       </div>
     </div>
   );
-}
+});
