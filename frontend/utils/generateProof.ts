@@ -15,7 +15,6 @@ import { getStoredSecret } from './contractHelpers';
 import { readContract } from '@wagmi/core';
 import { config } from '../config';
 import { abi } from '../abi/abi';
-import { WORDLE_CONTRACT_ADDRESS } from '../constant';
 
 
 export function generateSecureSalt(): Fr {
@@ -85,49 +84,83 @@ export async function generateProof(
     // We need to find the correct hash array that matches our local secret
     console.log("Fetching word commitment hashes from contract... ⏳");
     
-    // Try to determine which hash array contains our commitment hashes
-    let commitmentHashes: string[] = [];
-    let usedHashArray = '';
-    console.log("Stored letter codes:", usedHashArray);
-    // Generate what our commitment hashes should be locally for comparison
+    // Determine which player the current user is and fetch their commitment hashes
+    // Get player addresses from the SPECIFIC game contract (not the constant)
+    const player1 = await readContract(config, {
+      address: gameContract as `0x${string}`,
+      abi: abi,
+      functionName: 'player1',
+    }) as `0x${string}`;
+    
+    const player2 = await readContract(config, {
+      address: gameContract as `0x${string}`,
+      abi: abi,
+      functionName: 'player2',
+    }) as `0x${string}`;
+    
+    console.log("🔍 Player identification:", {
+      currentUser: currentUserAddress,
+      player1,
+      player2,
+      isPlayer1: currentUserAddress?.toLowerCase() === player1.toLowerCase(),
+      isPlayer2: currentUserAddress?.toLowerCase() === player2.toLowerCase()
+    });
+    
+    // Determine which hash array to use based on which player the current user is
+    const isCurrentUserPlayer1 = currentUserAddress?.toLowerCase() === player1.toLowerCase();
+    const hashArrayName = isCurrentUserPlayer1 ? 'word_commitment_hash1' : 'word_commitment_hash2';
+    
+    console.log(`Fetching commitment hashes from ${hashArrayName} for current user`);
+    
+    // Fetch the current user's commitment hashes from the SPECIFIC game contract
+    const commitmentHashes: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const hash = await readContract(config, {
+        address: gameContract as `0x${string}`,
+        abi: abi,
+        functionName: hashArrayName,
+        args: [BigInt(i)],
+      }) as `0x${string}`;
+      commitmentHashes.push(hash);
+    }
+    
+    console.log(`Fetched hashes from ${hashArrayName}:`, commitmentHashes);
+    
+    // Validate that the fetched hashes are not all zeros (indicating they were stored)
+    const allZero = commitmentHashes.every(hash => 
+      hash === '0x0000000000000000000000000000000000000000000000000000000000000000'
+    );
+    
+    if (allZero) {
+      throw new Error(`No commitment hashes found in ${hashArrayName}. The game join transaction may not have been mined yet.`);
+    }
+    
+    // IMPORTANT: Verify that the fetched hashes match our local secret
+    // If they don't match, it means we're using the wrong hash array or there's a mismatch
+    console.log("🔍 Verifying fetched hashes against local secret...");
     const expectedHashes: string[] = [];
     for (let i = 0; i < 5; i++) {
       const expectedCommitment = await generateWordCommitment(letterCodes[i], salt);
       expectedHashes.push(expectedCommitment);
     }
     
-    // Try both hash arrays to find the one that matches our expected hashes
-    const hashArrays = ['word_commitment_hash1', 'word_commitment_hash2'] as const;
+    console.log("Expected hashes from local secret:", expectedHashes);
+    console.log("Fetched hashes from contract:", commitmentHashes);
     
-    for (const hashArrayName of hashArrays) {
-      const testHashes: string[] = [];
-      
-      for (let i = 0; i < 5; i++) {
-        const hash = await readContract(config, {
-          address: WORDLE_CONTRACT_ADDRESS,
-          abi: abi,
-          functionName: hashArrayName,
-          args: [BigInt(i)],
-        }) as `0x${string}`;
-        testHashes.push(hash);
-      }
-      
-      // Check if this hash array matches our expected hashes
-      const matches = expectedHashes.every((expected, index) => 
-        expected.toLowerCase() === testHashes[index].toLowerCase()
-      );
-      
-      if (matches) {
-        commitmentHashes = testHashes;
-        usedHashArray = hashArrayName;
-        console.log(`✅ Found matching commitment hashes in ${hashArrayName}`);
-        break;
-      }
+    const hashesMatch = expectedHashes.every((expected, index) => 
+      expected.toLowerCase() === commitmentHashes[index].toLowerCase()
+    );
+    
+    if (!hashesMatch) {
+      console.error("❌ Hash mismatch detected!");
+      console.error("This means either:");
+      console.error("1. The current user is not the owner of these commitment hashes");
+      console.error("2. There's a salt or generation mismatch");
+      console.error("3. The wrong hash array was selected");
+      throw new Error(`Commitment hash mismatch: fetched hashes from ${hashArrayName} don't match local secret "${word}"`);
     }
     
-    if (commitmentHashes.length === 0) {
-      throw new Error("Could not find matching commitment hashes in either hash array. This shouldn't happen.");
-    }
+    console.log("✅ Hash verification passed - fetched hashes match local secret");
 
     const guessLetters = wordToLetterHex(userGuess);
     

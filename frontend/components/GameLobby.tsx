@@ -51,8 +51,9 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       // First generate commitments without storing (we need the game contract address first)
       const commitmentHashes = await generateCommitmentHashes(word.toLowerCase());
       console.log("Commitment hashes generated:", commitmentHashes);
+      
       // Create the game
-      //const tx = await createNewGame(gameId, commitmentHashes);
+      await createNewGame(gameId, commitmentHashes);
       
       // Store the word and game info for later secret storage
       // We'll store the secret when the GameCreated event is received
