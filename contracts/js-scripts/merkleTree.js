@@ -337,7 +337,7 @@ async function main() {
     }
 }
 
-main().catch((err) => {
-    console.error('Error creating tree:', err);
-    destroyBarretenberg().finally(() => process.exit(1));
-});
+// main().catch((err) => {
+//     console.error('Error creating tree:', err);
+//     destroyBarretenberg().finally(() => process.exit(1));
+// });
