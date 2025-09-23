@@ -9,7 +9,8 @@ import {
   hexLettersToAsciiNumbers, 
   calculateWordleResults
 } from './gameLogic';
-import { ProofResult, CircuitInputs, LogFunction } from './types';
+//import { ProofResult, CircuitInputs, LogFunction } from './types';
+import { CircuitInputs } from "./types";
 import { getStoredSecret } from './contractHelpers';
 import { readContract } from '@wagmi/core';
 import { config } from '../config';
@@ -56,6 +57,8 @@ export async function generateProof(
 ): Promise<{ proof: Uint8Array; publicInputs: string[] }> {
   try {
     console.log("Initializing Barretenberg backend... ⏳");
+    console.log("Game contract:", gameContract);
+    console.log("Current user address:", currentUserAddress);
     const bb = await Barretenberg.new();
     
     // Validate user guess
@@ -85,7 +88,7 @@ export async function generateProof(
     // Try to determine which hash array contains our commitment hashes
     let commitmentHashes: string[] = [];
     let usedHashArray = '';
-    
+    console.log("Stored letter codes:", usedHashArray);
     // Generate what our commitment hashes should be locally for comparison
     const expectedHashes: string[] = [];
     for (let i = 0; i < 5; i++) {

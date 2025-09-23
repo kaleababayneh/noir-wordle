@@ -20,4 +20,6 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js', // Path to your PostCSS config file
   },
+  // To allow this host, add "super-ghost-intimate.ngrok-free.app" to `preview.allowedHosts` in vite.config.js.
+  preview: { allowedHosts: ["super-ghost-intimate.ngrok-free.app"] }
 });
