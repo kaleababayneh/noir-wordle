@@ -10,6 +10,11 @@ import {
   calculateWordleResults
 } from './gameLogic';
 import { ProofResult, CircuitInputs, LogFunction } from './types';
+import { getStoredSecret } from './contractHelpers';
+import { readContract } from '@wagmi/core';
+import { config } from '../config';
+import { abi } from '../abi/abi';
+import { WORDLE_CONTRACT_ADDRESS } from '../constant';
 
 
 export function generateSecureSalt(): Fr {
@@ -46,7 +51,8 @@ export async function generateWordCommitment(letterCode: number, salt: Fr): Prom
 
 export async function generateProof(
   userGuess: string,
-  gameContract: string
+  gameContract: string,
+  currentUserAddress?: string
 ): Promise<{ proof: Uint8Array; publicInputs: string[] }> {
   try {
     console.log("Initializing Barretenberg backend... ⏳");
@@ -63,7 +69,6 @@ export async function generateProof(
 
     // Get stored secret for this game
     console.log("Retrieving stored secret... ⏳");
-    const { getStoredSecret } = await import('./contractHelpers');
     const storedSecret = getStoredSecret(gameContract);
     
     if (!storedSecret) {
@@ -73,14 +78,52 @@ export async function generateProof(
     const { word, letterCodes, salt: saltString } = storedSecret;
     const salt = new Fr(BigInt(saltString));
 
-    // Generate commitment hashes locally using our secret word and salt
-    // This ensures we use the exact same hashes that were generated when we created the game
-    console.log("Generating commitment hashes locally... ⏳");
-    const commitmentHashes: string[] = [];
+    // Fetch commitment hashes from the blockchain (the proper ZK way)
+    // We need to find the correct hash array that matches our local secret
+    console.log("Fetching word commitment hashes from contract... ⏳");
     
+    // Try to determine which hash array contains our commitment hashes
+    let commitmentHashes: string[] = [];
+    let usedHashArray = '';
+    
+    // Generate what our commitment hashes should be locally for comparison
+    const expectedHashes: string[] = [];
     for (let i = 0; i < 5; i++) {
-      const commitment = await generateWordCommitment(letterCodes[i], salt);
-      commitmentHashes.push(commitment);
+      const expectedCommitment = await generateWordCommitment(letterCodes[i], salt);
+      expectedHashes.push(expectedCommitment);
+    }
+    
+    // Try both hash arrays to find the one that matches our expected hashes
+    const hashArrays = ['word_commitment_hash1', 'word_commitment_hash2'] as const;
+    
+    for (const hashArrayName of hashArrays) {
+      const testHashes: string[] = [];
+      
+      for (let i = 0; i < 5; i++) {
+        const hash = await readContract(config, {
+          address: WORDLE_CONTRACT_ADDRESS,
+          abi: abi,
+          functionName: hashArrayName,
+          args: [BigInt(i)],
+        }) as `0x${string}`;
+        testHashes.push(hash);
+      }
+      
+      // Check if this hash array matches our expected hashes
+      const matches = expectedHashes.every((expected, index) => 
+        expected.toLowerCase() === testHashes[index].toLowerCase()
+      );
+      
+      if (matches) {
+        commitmentHashes = testHashes;
+        usedHashArray = hashArrayName;
+        console.log(`✅ Found matching commitment hashes in ${hashArrayName}`);
+        break;
+      }
+    }
+    
+    if (commitmentHashes.length === 0) {
+      throw new Error("Could not find matching commitment hashes in either hash array. This shouldn't happen.");
     }
 
     const guessLetters = wordToLetterHex(userGuess);

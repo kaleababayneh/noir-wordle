@@ -85,20 +85,28 @@ export async function getPlayer2Address(): Promise<string> {
  * When Player 1 makes a guess, Player 2 verifies using Player 2's hashes (word_commitment_hash2)
  * When Player 2 makes a guess, Player 1 verifies using Player 1's hashes (word_commitment_hash1)
  */
-export async function fetchWordCommitmentHashes(): Promise<WordCommitmentResult> {
+export async function fetchWordCommitmentHashes(currentUserAddress?: string): Promise<WordCommitmentResult> {
   try {
-    // Get who should verify the current guess
-    const turnToVerify = await getTurnToVerify();
-    
     // Get player addresses
     const player1 = await getPlayer1Address();
+    const player2 = await getPlayer2Address();
+    
+    // Determine which player the current user is
+    let isCurrentUserPlayer1 = false;
+    if (currentUserAddress) {
+      isCurrentUserPlayer1 = currentUserAddress.toLowerCase() === player1.toLowerCase();
+    } else {
+      // Fallback to using turnToVerify if no currentUserAddress provided
+      const turnToVerify = await getTurnToVerify();
+      isCurrentUserPlayer1 = turnToVerify.toLowerCase() === player1.toLowerCase();
+    }
     
     const wordCommitmentHashes: string[] = [];
     
-    // Use the verifier's word commitment hashes (matches contract logic)
-    // If Player 1 is verifying, use word_commitment_hash1
-    // If Player 2 is verifying, use word_commitment_hash2
-    const hashArrayName = turnToVerify.toLowerCase() === player1.toLowerCase() 
+    // Use the current user's word commitment hashes (their own secret)
+    // If current user is Player 1, use word_commitment_hash1
+    // If current user is Player 2, use word_commitment_hash2
+    const hashArrayName = isCurrentUserPlayer1 
       ? 'word_commitment_hash1' 
       : 'word_commitment_hash2';
     
@@ -113,7 +121,18 @@ export async function fetchWordCommitmentHashes(): Promise<WordCommitmentResult>
       wordCommitmentHashes.push(hash);
     }
     
-    console.log(`Fetched word commitment hashes for ${hashArrayName} (verifier's hashes):`, wordCommitmentHashes);
+    const isCurrentUserPlayer2 = currentUserAddress?.toLowerCase() === player2.toLowerCase();
+    
+    console.log(`🔍 Hash fetch debug:`, {
+      currentUserAddress,
+      player1,
+      player2,
+      isCurrentUserPlayer1,
+      isCurrentUserPlayer2,
+      hashArrayName,
+      fetchedHashes: wordCommitmentHashes
+    });
+    
     return { wordCommitmentHashes, hashArrayName };
   } catch (error) {
     console.error('Error fetching word commitment hashes:', error);

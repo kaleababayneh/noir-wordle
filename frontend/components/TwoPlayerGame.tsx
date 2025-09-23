@@ -230,7 +230,8 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
 
       const { proof, publicInputs } = await generateProof(
         gameState.lastGuess,
-        gameAddress
+        gameAddress,
+        currentAccount
       );
       
       // Extract only the results (positions 10-14) from publicInputs
