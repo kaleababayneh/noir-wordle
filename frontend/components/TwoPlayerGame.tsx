@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { abi } from "../abi/abi.ts";
 import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
@@ -34,6 +34,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
 
   // State management
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
+  const [hasSecret, setHasSecret] = useState<boolean | null>(null);
 
   // Utility functions
   const addLog = useCallback((message: string) => {
@@ -70,6 +71,29 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   // Current user's role detection
   const isCurrentUserPlayer1 = currentAccount?.toLowerCase() === gameState.player1?.toLowerCase();
   const isCurrentUserPlayer2 = currentAccount?.toLowerCase() === gameState.player2?.toLowerCase();
+  
+  // Check if current user has the secret for this game
+  const checkHasSecret = useCallback(async () => {
+    try {
+      const { getStoredSecret } = await import('../utils/contractHelpers');
+      const gameAddress = (gameContract || WORDLE_CONTRACT_ADDRESS) as string;
+      const storedSecret = getStoredSecret(gameAddress);
+      console.log('🔍 Secret check:', {
+        gameAddress,
+        hasStoredSecret: !!storedSecret,
+        storedSecret: storedSecret ? { word: storedSecret.word } : null
+      });
+      setHasSecret(!!storedSecret);
+    } catch (error) {
+      console.error('Error checking secret:', error);
+      setHasSecret(false);
+    }
+  }, [gameContract]);
+  
+  // Check for secret on component mount
+  useEffect(() => {
+    checkHasSecret();
+  }, [checkHasSecret]);
 
   // Create separate boards based on user's perspective
   const createUserBoard = (contractBoard: any[], playerKey: 'player1' | 'player2', isOwnBoard: boolean) => {
@@ -192,11 +216,27 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       return;
     }
 
+    // Check if current user has the secret for this game
+    const { getStoredSecret } = await import('../utils/contractHelpers');
+    const gameAddress = (gameContract || WORDLE_CONTRACT_ADDRESS) as string;
+    const storedSecret = getStoredSecret(gameAddress);
+    
+    if (!storedSecret) {
+      addLog("❌ You can only verify guesses for games where you have the secret word!");
+      addLog("💡 Only the player who created the game can verify guesses.");
+      return;
+    }
+
     try {
       setIsGeneratingProof(true);
       addLog("🔐 Generating ZK proof for verification...");
+      addLog(`🔍 Verifying guess "${gameState.lastGuess}" against your secret word "${storedSecret.word}"`);
 
-      const { proof, publicInputs } = await generateProof(showLog, gameState.lastGuess);
+      const { proof, publicInputs } = await generateProof(
+        showLog, 
+        gameState.lastGuess,
+        gameAddress
+      );
       
       // Extract only the results (positions 10-14) from publicInputs
       const results = publicInputs.slice(10, 15) as `0x${string}`[];
@@ -234,6 +274,19 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const canPlayer1Verify = shouldPlayer1Verify && hasPendingGuess;
   const canPlayer2Verify = shouldPlayer2Verify && hasPendingGuess;
 
+  console.log('🔍 Verification debug:', {
+    hasSecret,
+    shouldPlayer1Verify,
+    shouldPlayer2Verify,
+    isCurrentUserPlayer1,
+    isCurrentUserPlayer2,
+    hasPendingGuess,
+    canPlayer1Verify,
+    canPlayer2Verify,
+    player1ShowsVerify: shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true,
+    player2ShowsVerify: shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true
+  });
+
 
 
   return (
@@ -264,7 +317,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerNumber={1}
             playerName="Player 1"  
             isPlayerTurn={isPlayer1Turn && isCurrentUserPlayer1}
-            canVerify={canPlayer1Verify && isCurrentUserPlayer1}
+            canVerify={canPlayer1Verify}
             shouldVerify={shouldPlayer1Verify}
             hasPendingGuess={hasPendingGuess}
             lastGuess={gameState.lastGuess}
@@ -275,6 +328,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             onGuess={handleGuess}
             onVerify={handleVerify}
             isCurrentUser={isCurrentUserPlayer1}
+            hasSecret={shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true}
           />
 
           {/* Player 2 Section */}
@@ -282,7 +336,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerNumber={2}
             playerName="Player 2"
             isPlayerTurn={isPlayer2Turn && isCurrentUserPlayer2}
-            canVerify={canPlayer2Verify && isCurrentUserPlayer2}
+            canVerify={canPlayer2Verify}
             shouldVerify={shouldPlayer2Verify}
             hasPendingGuess={hasPendingGuess}
             lastGuess={gameState.lastGuess}
@@ -293,6 +347,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             onGuess={handleGuess}
             onVerify={handleVerify}
             isCurrentUser={isCurrentUserPlayer2}
+            hasSecret={shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true}
           />
         </div>
 

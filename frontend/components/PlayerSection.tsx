@@ -22,6 +22,7 @@ interface PlayerSectionProps {
   onGuess: (guess: string) => void;
   onVerify: () => void;
   isCurrentUser: boolean;
+  hasSecret?: boolean; // New prop to indicate if current user has secret for verification
 }
 
 export function PlayerSection({
@@ -38,6 +39,7 @@ export function PlayerSection({
   playerGuesses,
   onGuess,
   onVerify,
+  hasSecret,
   isCurrentUser
 }: PlayerSectionProps) {
   const [guessInput, setGuessInput] = useState("");
@@ -115,8 +117,8 @@ export function PlayerSection({
           </div>
         )}
 
-        {/* Verify Button */}
-        {isCurrentUser && (
+        {/* Verify Button - Only show for users who have the secret */}
+        {hasSecret && (
           <div>
             <button
               onClick={onVerify}
@@ -138,6 +140,14 @@ export function PlayerSection({
                 Waiting for Player {otherPlayerNumber} to make a guess...
               </p>
             )}
+          </div>
+        )}
+        
+        {/* Show message for users without secret */}
+        {isCurrentUser && !hasSecret && canVerify && (
+          <div className="text-center py-4 text-gray-500">
+            <p>🔐 Only the player with the secret word can verify guesses</p>
+            <p className="text-sm">The other player will verify this guess</p>
           </div>
         )}
       </div>

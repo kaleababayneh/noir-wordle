@@ -115,7 +115,7 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
     }
 
     try {
-      const commitmentHashes = await generateCommitmentHashes(word.toLowerCase());
+      const commitmentHashes = await generateCommitmentHashes(word.toLowerCase(), game.gameContract);
       await joinGameByContract(game.gameContract as `0x${string}`, commitmentHashes);
       
       // Reset form and navigate to game
