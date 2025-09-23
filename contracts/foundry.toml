@@ -22,3 +22,8 @@ solc_version = "0.8.27"
 remappings = [
     "@poseidon/=lib/poseidon2-evm/",
 ]
+
+[rpc_endpoints]
+base_sepolia = "wss://base-sepolia-rpc.publicnode.com"
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
+
