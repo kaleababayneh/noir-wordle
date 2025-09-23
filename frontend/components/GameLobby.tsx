@@ -12,6 +12,7 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
   const {
     totalGames,
     activeGames,
+    playerGames,
     createNewGame,
     joinGameByContract,
     isCreatingGame,
@@ -164,20 +165,35 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
         </div>
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-600">{totalGames?.toString() || '0'}</div>
               <div className="text-blue-700">Total Games</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">{activeGames?.length || 0}</div>
-              <div className="text-green-700">Looking for Players</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {playerGames?.filter(game => 
+                  game.player2 && game.player2 !== '0x0000000000000000000000000000000000000000'
+                ).length || 0}
+              </div>
+              <div className="text-purple-700">Your Active Games</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-600">
-                {activeGames?.filter(game => address && game.player1.toLowerCase() === address.toLowerCase()).length || 0}
+                {playerGames?.filter(game => 
+                  address && game.player1.toLowerCase() === address.toLowerCase() && 
+                  (!game.player2 || game.player2 === '0x0000000000000000000000000000000000000000')
+                ).length || 0}
               </div>
-              <div className="text-blue-700">Your Created Games</div>
+              <div className="text-blue-700">Your Waiting Games</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">
+                {activeGames?.filter(game => 
+                  !address || game.player1.toLowerCase() !== address.toLowerCase()
+                ).length || 0}
+              </div>
+              <div className="text-green-700">Games to Join</div>
             </div>
           </div>
         </div>
@@ -297,10 +313,107 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Active Games (excluding user's own games) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Your Active Games - Games you can play now */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">🟢 Games You Can Join</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">🎮 Your Active Games</h2>
+          <div className="space-y-3">
+            {(() => {
+              const yourActiveGames = playerGames?.filter(game => 
+                game.player2 && game.player2 !== '0x0000000000000000000000000000000000000000'
+              ) || [];
+              
+              return yourActiveGames.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No active games to play.
+                  <br />
+                  <span className="text-green-600">Join a game to start playing! 🎯</span>
+                </div>
+              ) : (
+                yourActiveGames.map((game) => (
+                  <div key={game.gameContract} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-bold text-lg text-purple-900">{game.gameId}</h3>
+                        <p className="text-sm text-purple-700">
+                          {address && game.player1.toLowerCase() === address.toLowerCase() 
+                            ? `vs ${formatAddress(game.player2)}` 
+                            : `vs ${formatAddress(game.player1)}`}
+                        </p>
+                      </div>
+                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">
+                        Ready to Play
+                      </span>
+                    </div>
+                    <div className="text-xs text-purple-600 mb-3">
+                      Created: {formatDate(game.createdAt)}
+                    </div>
+                    <button
+                      onClick={() => onGameSelected(game.gameContract)}
+                      className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                    >
+                      🎮 Play Game
+                    </button>
+                  </div>
+                ))
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Your Waiting Games - Games you created that need player 2 */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">⏳ Your Waiting Games</h2>
+          <div className="space-y-3">
+            {(() => {
+              const yourWaitingGames = playerGames?.filter(game => 
+                address && game.player1.toLowerCase() === address.toLowerCase() && 
+                (!game.player2 || game.player2 === '0x0000000000000000000000000000000000000000')
+              ) || [];
+              
+              return yourWaitingGames.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No games waiting for players.
+                  <br />
+                  <span className="text-blue-600">Create one to get started! 🎯</span>
+                </div>
+              ) : (
+                yourWaitingGames.map((game) => (
+                  <div key={game.gameContract} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-bold text-lg text-blue-900">{game.gameId}</h3>
+                        <p className="text-sm text-blue-700">Your Game - Waiting for Player 2</p>
+                      </div>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        Waiting for Player 2
+                      </span>
+                    </div>
+                    <div className="text-xs text-blue-600 mb-3">
+                      Created: {formatDate(game.createdAt)}
+                    </div>
+                    <div className="text-center py-2">
+                      <p className="text-sm text-blue-700 mb-2">Share this Game ID with a friend:</p>
+                      <div className="bg-white border border-blue-300 rounded px-3 py-2 mb-2">
+                        <p className="text-sm text-blue-900 font-mono font-bold">{game.gameId}</p>
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(game.gameId)}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        📋 Copy Game ID
+                      </button>
+                    </div>
+                  </div>
+                ))
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Games to Join - Games created by others */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">🤝 Games to Join</h2>
           <div className="space-y-3">
             {(() => {
               const joinableGames = activeGames?.filter(game => 
@@ -323,7 +436,7 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
                         <p className="text-sm text-gray-600">by {formatAddress(game.player1)}</p>
                       </div>
                       <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                        Waiting for Player 2
+                        Open
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mb-3">
@@ -338,62 +451,6 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
                     >
                       Join Game 🤝
                     </button>
-                  </div>
-                ))
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Your Created Games */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">👤 Your Created Games</h2>
-          <div className="space-y-3">
-            {(() => {
-              const yourCreatedGames = activeGames?.filter(game => 
-                address && game.player1.toLowerCase() === address.toLowerCase()
-              ) || [];
-              
-              return yourCreatedGames.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  You haven't created any games waiting for players.
-                  <br />
-                  <span className="text-blue-600">Create one to get started! 🎯</span>
-                </div>
-              ) : (
-                yourCreatedGames.map((game) => (
-                  <div key={game.gameContract} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-lg text-blue-900">{game.gameId}</h3>
-                        <p className="text-sm text-blue-700">Your Game - Waiting for Player 2</p>
-                      </div>
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                        Waiting for Player 2
-                      </span>
-                    </div>
-                    <div className="text-xs text-blue-600 mb-3">
-                      Created: {formatDate(game.createdAt)}
-                    </div>
-                    <div className="text-center py-2">
-                      <p className="text-sm text-blue-700 mb-2">Share this Game ID with a friend:</p>
-                      <div className="bg-white border border-blue-300 rounded px-3 py-2 mb-2">
-                        <p className="text-sm text-blue-900 font-mono font-bold">{game.gameId}</p>
-                      </div>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(game.gameId)}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline mb-2"
-                      >
-                        📋 Copy Game ID
-                      </button>
-                      <br />
-                      <button
-                        onClick={() => onGameSelected(game.gameContract)}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        🎯 Go to Game
-                      </button>
-                    </div>
                   </div>
                 ))
               );
