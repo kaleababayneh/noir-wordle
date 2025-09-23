@@ -1,4 +1,7 @@
 import { createRequire } from 'module';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+
 const require = createRequire(import.meta.url);
 const words = require('an-array-of-english-words');
 
@@ -137,6 +140,24 @@ export class PoseidonTree {
       await fn(level, currentIndex, siblingIndex);
       currentIndex = Math.floor(currentIndex / 2);
     }
+ }
+
+  // Add method to serialize tree to JSON
+  toJSON() {
+    return {
+      levels: this.levels,
+      totalLeaves: this.totalLeaves,
+      zeros: this.zeros,
+      storage: Object.fromEntries(this.storage)
+    };
+  }
+
+  // Add static method to create tree from JSON
+  static fromJSON(jsonData) {
+    const tree = new PoseidonTree(jsonData.levels, jsonData.zeros);
+    tree.totalLeaves = jsonData.totalLeaves;
+    tree.storage = new Map(Object.entries(jsonData.storage));
+    return tree;
   }
 }
 
@@ -174,7 +195,7 @@ export async function merkleTree(leaves) {
   return tree;
 }
 
-function englishWordToField(word) {
+export function englishWordToField(word) {
     let binaryString = "";
     for (let i = 0; i < word.length; i++) {
         binaryString += word.charCodeAt(i).toString(2).padStart(8, "0");
@@ -183,21 +204,40 @@ function englishWordToField(word) {
     return new Fr(wordBigInt);
 }
 
+export function saveTreeToFile(tree, filename = 'merkle-tree.json') {
+  const treePath = join(process.cwd(), filename);
+  const treeData = tree.toJSON();
+  writeFileSync(treePath, JSON.stringify(treeData, null, 2));
+  console.log(`💾 Tree saved to ${treePath}`);
+}
 
-(
-    async () => {
-        console.log('🌳 Creating Merkle tree of Wordle words...')
-   
-        // Create ONE tree with ALL words
-        const allWords = WORDLE.slice(0, 9).map(word => englishWordToField(word).toString());
+export function loadTreeFromFile(filename = 'merkle-tree.json') {
+  const treePath = join(process.cwd(), filename);
+  if (!existsSync(treePath)) {
+    throw new Error(`Tree file ${treePath} does not exist`);
+  }
+  const treeData = JSON.parse(readFileSync(treePath, 'utf8'));
+  const tree = PoseidonTree.fromJSON(treeData);
+  //console.log(`📂 Tree loaded from ${treePath}`);
+  return tree;
+}
+
+
+async function  main() {
+        console.log('🌳 Creating Merkle tree with 10 Wordle words...')
+        
+        const wordsToUse = WORDLE.slice(WORDLE.length -20, WORDLE.length);
+        console.log('📝 Words:', wordsToUse);
+        
+        let allWords = wordsToUse.map(word => englishWordToField(word).toString());
+        // allWords = await Promise.all(allWords.map(async word => await poseidonHash([word])));
+        console.log('Hashed leaves:', allWords);
         const tree = await merkleTree(allWords);
+       
+        console.log(`✅ Merkle tree created with root: ${tree.root()}`);
+        
+        saveTreeToFile(tree, 'wordle-merkle-tree.json');
+        
+}
 
-        console.log(tree);
-        const wordy = "aback";
-        const wordFielded = englishWordToField(wordy).toString();
-        console.log("Word fielded:", wordFielded);
-        const index = tree.getIndex(englishWordToField(wordy).toString());
-        console.log(JSON.stringify(tree.proof(index), null, 2));
-    }
 
-)();
