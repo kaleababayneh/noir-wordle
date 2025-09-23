@@ -67,54 +67,68 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     player2: []
   });
 
-  // Hybrid board system: Pending local state + Contract verification results
-  const createHybridBoard = (contractBoard: any[], playerKey: 'player1' | 'player2') => {
+  // Current user's role detection
+  const isCurrentUserPlayer1 = currentAccount?.toLowerCase() === gameState.player1?.toLowerCase();
+  const isCurrentUserPlayer2 = currentAccount?.toLowerCase() === gameState.player2?.toLowerCase();
+
+  // Create separate boards based on user's perspective
+  const createUserBoard = (contractBoard: any[], playerKey: 'player1' | 'player2', isOwnBoard: boolean) => {
     const pending = pendingGuesses[playerKey];
     const hybrid: any[] = [];
     
-    // Start with all pending guesses (these provide the chronological order)
-    pending.forEach(pendingGuess => {
-      // Check if this guess has verification results from contract
-      const contractResult = contractBoard.find(contractGuess => 
-        contractGuess.word.toLowerCase() === pendingGuess.word.toLowerCase()
-      );
+    if (isOwnBoard) {
+      // For your own board: show all your guesses (pending + verified)
+      pending.forEach(pendingGuess => {
+        const contractResult = contractBoard.find(contractGuess => 
+          contractGuess.word.toLowerCase() === pendingGuess.word.toLowerCase()
+        );
+        
+        if (contractResult) {
+          hybrid.push({
+            word: pendingGuess.word,
+            isVerified: true,
+            results: contractResult.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+          });
+        } else {
+          hybrid.push({
+            word: pendingGuess.word,
+            isVerified: false,
+            results: undefined
+          });
+        }
+      });
       
-      if (contractResult) {
-        // This guess has been verified - use contract results
-        hybrid.push({
-          word: pendingGuess.word,
-          isVerified: true,
-          results: contractResult.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
-        });
-      } else {
-        // This guess is still pending verification
-        hybrid.push({
-          word: pendingGuess.word,
-          isVerified: false,
-          results: undefined
-        });
-      }
-    });
-    
-    // Add any contract guesses that aren't in pending (shouldn't happen normally)
-    contractBoard.forEach(contractGuess => {
-      const existsInPending = pending.some(pendingGuess => 
-        pendingGuess.word.toLowerCase() === contractGuess.word.toLowerCase()
-      );
-      if (!existsInPending) {
-        hybrid.push({
-          word: contractGuess.word,
-          isVerified: contractGuess.isVerified,
-          results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
-        });
-      }
-    });
+      // Add any contract guesses that aren't in pending
+      contractBoard.forEach(contractGuess => {
+        const existsInPending = pending.some(pendingGuess => 
+          pendingGuess.word.toLowerCase() === contractGuess.word.toLowerCase()
+        );
+        if (!existsInPending) {
+          hybrid.push({
+            word: contractGuess.word,
+            isVerified: contractGuess.isVerified,
+            results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+          });
+        }
+      });
+    } else {
+      // For opponent's board: only show verified guesses
+      contractBoard.forEach(contractGuess => {
+        if (contractGuess.isVerified) {
+          hybrid.push({
+            word: contractGuess.word,
+            isVerified: true,
+            results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+          });
+        }
+      });
+    }
     
     return hybrid;
   };
 
-  const finalPlayer1Board = createHybridBoard(player1Board, 'player1');
-  const finalPlayer2Board = createHybridBoard(player2Board, 'player2');
+  const finalPlayer1Board = createUserBoard(player1Board, 'player1', isCurrentUserPlayer1);
+  const finalPlayer2Board = createUserBoard(player2Board, 'player2', isCurrentUserPlayer2);
 
   // Debug logging for hybrid board approach (reduced frequency)
   // console.log('TwoPlayerGame hybrid board system:', {
@@ -220,6 +234,8 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const canPlayer1Verify = shouldPlayer1Verify && hasPendingGuess;
   const canPlayer2Verify = shouldPlayer2Verify && hasPendingGuess;
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -247,8 +263,8 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           <PlayerSection
             playerNumber={1}
             playerName="Player 1"  
-            isPlayerTurn={isPlayer1Turn}
-            canVerify={canPlayer1Verify}
+            isPlayerTurn={isPlayer1Turn && isCurrentUserPlayer1}
+            canVerify={canPlayer1Verify && isCurrentUserPlayer1}
             shouldVerify={shouldPlayer1Verify}
             hasPendingGuess={hasPendingGuess}
             lastGuess={gameState.lastGuess}
@@ -258,14 +274,15 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerGuesses={finalPlayer1Board}
             onGuess={handleGuess}
             onVerify={handleVerify}
+            isCurrentUser={isCurrentUserPlayer1}
           />
 
           {/* Player 2 Section */}
           <PlayerSection
             playerNumber={2}
             playerName="Player 2"
-            isPlayerTurn={isPlayer2Turn}
-            canVerify={canPlayer2Verify}
+            isPlayerTurn={isPlayer2Turn && isCurrentUserPlayer2}
+            canVerify={canPlayer2Verify && isCurrentUserPlayer2}
             shouldVerify={shouldPlayer2Verify}
             hasPendingGuess={hasPendingGuess}
             lastGuess={gameState.lastGuess}
@@ -275,6 +292,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerGuesses={finalPlayer2Board}
             onGuess={handleGuess}
             onVerify={handleVerify}
+            isCurrentUser={isCurrentUserPlayer2}
           />
         </div>
 

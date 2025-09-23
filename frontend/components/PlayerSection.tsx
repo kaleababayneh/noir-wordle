@@ -21,6 +21,7 @@ interface PlayerSectionProps {
   playerGuesses: GuessResult[];
   onGuess: (guess: string) => void;
   onVerify: () => void;
+  isCurrentUser: boolean;
 }
 
 export function PlayerSection({
@@ -36,7 +37,8 @@ export function PlayerSection({
   isGeneratingProof,
   playerGuesses,
   onGuess,
-  onVerify
+  onVerify,
+  isCurrentUser
 }: PlayerSectionProps) {
   const [guessInput, setGuessInput] = useState("");
 
@@ -56,10 +58,12 @@ export function PlayerSection({
   const otherPlayerNumber = playerNumber === 1 ? 2 : 1;
 
   return (
-    <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${borderColor}`}>
+    <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${borderColor} ${
+      !isCurrentUser ? 'opacity-75' : ''
+    }`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className={`text-2xl font-bold text-${playerColor}-600`}>
-          👤 {playerName}
+          👤 {playerName} {isCurrentUser ? '(You)' : ''}
         </h2>
         <div className={`px-3 py-1 rounded-full text-sm font-medium ${
           isPlayerTurn ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
@@ -78,55 +82,64 @@ export function PlayerSection({
         />
 
         {/* Guess Input */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Make Your Guess (5 letters)
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={guessInput}
-              onChange={(e) => setGuessInput(e.target.value.toLowerCase())}
-              placeholder="Enter your guess..."
-              maxLength={5}
-              className={`flex-1 px-4 py-2 border rounded-lg ${focusRing} focus:ring-2 focus:border-transparent ${
-                isPlayerTurn ? `${activeBorder} border-2` : 'border-gray-300'
-              }`}
-              disabled={!isPlayerTurn || isPending || isConfirming}
-            />
-            <button
-              onClick={handleGuess}
-              disabled={!isPlayerTurn || isPending || isConfirming || guessInput.length !== 5}
-              className={`px-6 py-2 ${buttonColor} text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors`}
-            >
-              {isPending || isConfirming ? "..." : "Guess"}
-            </button>
+        {isCurrentUser ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Make Your Guess (5 letters)
+            </label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={guessInput}
+                onChange={(e) => setGuessInput(e.target.value.toLowerCase())}
+                placeholder="Enter your guess..."
+                maxLength={5}
+                className={`flex-1 px-4 py-2 border rounded-lg ${focusRing} focus:ring-2 focus:border-transparent ${
+                  isPlayerTurn ? `${activeBorder} border-2` : 'border-gray-300'
+                }`}
+                disabled={!isPlayerTurn || isPending || isConfirming}
+              />
+              <button
+                onClick={handleGuess}
+                disabled={!isPlayerTurn || isPending || isConfirming || guessInput.length !== 5}
+                className={`px-6 py-2 ${buttonColor} text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors`}
+              >
+                {isPending || isConfirming ? "..." : "Guess"}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <p>This is your opponent's board</p>
+            <p className="text-sm">You can only see their verified guesses</p>
+          </div>
+        )}
 
         {/* Verify Button */}
-        <div>
-          <button
-            onClick={onVerify}
-            disabled={!canVerify || isGeneratingProof || isPending || isConfirming}
-            className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>🔐</span>
-            <span>
-              {isGeneratingProof ? "Generating Proof..." : `Verify Player ${otherPlayerNumber}'s Guess`}
-            </span>
-          </button>
-          {canVerify && (
-            <p className="text-sm text-purple-600 mt-1">
-              It's your turn to verify Player {otherPlayerNumber}'s guess: "{lastGuess}"
-            </p>
-          )}
-          {shouldVerify && !hasPendingGuess && (
-            <p className="text-sm text-gray-500 mt-1">
-              Waiting for Player {otherPlayerNumber} to make a guess...
-            </p>
-          )}
-        </div>
+        {isCurrentUser && (
+          <div>
+            <button
+              onClick={onVerify}
+              disabled={!canVerify || isGeneratingProof || isPending || isConfirming}
+              className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+            >
+              <span>🔐</span>
+              <span>
+                {isGeneratingProof ? "Generating Proof..." : `Verify Player ${otherPlayerNumber}'s Guess`}
+              </span>
+            </button>
+            {canVerify && (
+              <p className="text-sm text-purple-600 mt-1">
+                It's your turn to verify Player {otherPlayerNumber}'s guess: "{lastGuess}"
+              </p>
+            )}
+            {shouldVerify && !hasPendingGuess && (
+              <p className="text-sm text-gray-500 mt-1">
+                Waiting for Player {otherPlayerNumber} to make a guess...
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
