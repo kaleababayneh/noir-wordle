@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Script, console} from "forge-std/Script.sol";
 import {Wordle} from "../src/Wordle.sol";
 import {HonkVerifier, IVerifier} from "../src/Verifier.sol";
+import { Poseidon2 } from "../lib/poseidon2-evm/src/Poseidon2.sol";
 
 contract DeployAll is Script {
     function run() external returns (Wordle, HonkVerifier) {
@@ -22,8 +23,11 @@ contract DeployAll is Script {
         wordCommitmentHash[3] = 0x0ed3294f4ba676f67296d5dcccdbe7dff01975032dda4c15eb3e732c77aa5cad;
         wordCommitmentHash[4] = 0x2bb35e499f8cb77c333df64bf07dbf52885c27b5c26eb83654dc956f44aeba00;
         
-        // Deploy Wordle with the verifier
-        Wordle wordle = new Wordle(IVerifier(address(verifier)));
+        // Deploy Poseidon2 hasher
+        Poseidon2 hasher = new Poseidon2();
+        
+        // Deploy Wordle with the verifier and hasher
+        Wordle wordle = new Wordle(IVerifier(address(verifier)), hasher);
         
         // Creator joins the game as player1
         wordle.joinGame(msg.sender, wordCommitmentHash);

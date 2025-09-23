@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Wordle } from "./Wordle.sol";
 import { IVerifier } from "./Verifier.sol";
+import { Poseidon2 } from "../lib/poseidon2-evm/src/Poseidon2.sol";
 
 contract WordleGameFactory {
     
@@ -17,6 +18,7 @@ contract WordleGameFactory {
     
     // Immutable verifier contract address
     IVerifier public immutable i_verifier;
+    Poseidon2 public immutable i_hasher;
     
     // Array of all games
     GameInfo[] public games;
@@ -53,9 +55,11 @@ contract WordleGameFactory {
     error WordleFactory__InvalidCommitmentHashes();
     error WordleFactory__GameIdAlreadyExists();
     
-    constructor(IVerifier _verifier) {
+    constructor(IVerifier _verifier, Poseidon2 _hasher) {
         require(address(_verifier) != address(0), "Invalid verifier address");
+        require(address(_hasher) != address(0), "Invalid hasher address");
         i_verifier = _verifier;
+        i_hasher = _hasher;
     }
     
     /**
@@ -72,7 +76,7 @@ contract WordleGameFactory {
         require(_wordCommitmentHashes.length == 5, "Need exactly 5 commitment hashes");
         
         // Deploy new empty Wordle game contract
-        gameContract = address(new Wordle(i_verifier));
+        gameContract = address(new Wordle(i_verifier, i_hasher));
         
         // Creator joins as player1
         Wordle(gameContract).joinGame(msg.sender, _wordCommitmentHashes);

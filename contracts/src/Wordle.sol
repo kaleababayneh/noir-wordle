@@ -88,8 +88,18 @@ contract Wordle {
         require(guess_bytes.length == 5, "Invalid guess length");
         
         // Validate each character is a lowercase letter
+        for (uint i = 0; i < 5; i++) {
+            require(guess_bytes[i] >= 0x61 && guess_bytes[i] <= 0x7A, "Only lowercase letters allowed");
+        }
 
-        bytes32 currentLevelHash = bytes32(abi.encodePacked(guess_word));
+        // Convert word to field element (same as englishWordToField in JS)
+        uint256 wordAsField = 0;
+        for (uint i = 0; i < 5; i++) {
+            wordAsField = wordAsField * 256 + uint256(uint8(guess_bytes[i]));
+        }
+        bytes32 currentLevelHash = bytes32(wordAsField);
+        
+        // Verify Merkle proof
         bytes32 left;
         bytes32 right;
         for (uint32 i = 0; i < pathElements.length; i++) {
@@ -101,11 +111,9 @@ contract Wordle {
                 left = pathElement;
                 right = currentLevelHash;
             }
-            // currentLevelHash = Field.toBytes32(i_hasher.hash_2(Field.toField(left), Field.toField(right)));
-
             currentLevelHash = Field.toBytes32(i_hasher.hash_2(Field.toField(left), Field.toField(right)));
         }
-
+        require(currentLevelHash == merkle_root, "Invalid Merkle Proof");
         for (uint i = 0; i < 5; i++) {
             require(guess_bytes[i] >= 0x61 && guess_bytes[i] <= 0x7A, "Only lowercase letters allowed");
         }
