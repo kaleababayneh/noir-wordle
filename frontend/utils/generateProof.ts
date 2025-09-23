@@ -3,7 +3,7 @@ import { UltraHonkBackend, Barretenberg, Fr } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
 import { CompiledCircuit } from '@noir-lang/types';
 import circuit from "../../circuits/target/circuits.json";
-import { fetchWordCommitmentHashes } from './contractHelpers';
+
 import { 
   wordToLetterHex, 
   hexLettersToAsciiNumbers, 
@@ -45,13 +45,11 @@ export async function generateWordCommitment(letterCode: number, salt: Fr): Prom
 
 
 export async function generateProof(
-  showLog: LogFunction, 
-  userGuess?: string, 
-  gameContract?: string,
-  wordCommitmentHashes?: string[]
-): Promise<ProofResult> {
+  userGuess: string,
+  gameContract: string
+): Promise<{ proof: Uint8Array; publicInputs: string[] }> {
   try {
-    showLog("Initializing Barretenberg backend... ⏳");
+    console.log("Initializing Barretenberg backend... ⏳");
     const bb = await Barretenberg.new();
     
     // Validate user guess
@@ -64,7 +62,7 @@ export async function generateProof(
     }
 
     // Get stored secret for this game
-    showLog("Retrieving stored secret... ⏳");
+    console.log("Retrieving stored secret... ⏳");
     const { getStoredSecret } = await import('./contractHelpers');
     const storedSecret = getStoredSecret(gameContract);
     
@@ -75,29 +73,30 @@ export async function generateProof(
     const { word, letterCodes, salt: saltString } = storedSecret;
     const salt = new Fr(BigInt(saltString));
 
-    // Use provided word commitment hashes, or fetch them
-    let commitmentHashes = wordCommitmentHashes;
+    // Generate commitment hashes locally using our secret word and salt
+    // This ensures we use the exact same hashes that were generated when we created the game
+    console.log("Generating commitment hashes locally... ⏳");
+    const commitmentHashes: string[] = [];
     
-    if (!commitmentHashes) {
-      showLog("Fetching word commitment hashes from contract... ⏳");
-      const result = await fetchWordCommitmentHashes();
-      commitmentHashes = result.wordCommitmentHashes;
+    for (let i = 0; i < 5; i++) {
+      const commitment = await generateWordCommitment(letterCodes[i], salt);
+      commitmentHashes.push(commitment);
     }
 
     const guessLetters = wordToLetterHex(userGuess);
     
-    showLog("Setting up Noir circuit... ⏳");
+    console.log("Setting up Noir circuit... ⏳");
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
     
-    showLog("Calculating Wordle results using your secret word... ⏳");
+    console.log("Calculating Wordle results using your secret word... ⏳");
     // Convert letter codes to hex strings for calculateWordleResults
     const correctLettersHex = letterCodes.map(code => 
       `0x${code.toString(16).padStart(64, '0')}`
     );
     const calculatedResults = await calculateWordleResults(guessLetters, correctLettersHex);
     
-    showLog(`Verifying guess "${userGuess}" against your secret word "${word}"`);
+    console.log(`Verifying guess "${userGuess}" against your secret word "${word}"`);
     
     // Convert guess letters to simple ASCII numbers (as expected by circuit)
     const guessAsciiNumbers = hexLettersToAsciiNumbers(guessLetters);
@@ -133,15 +132,15 @@ export async function generateProof(
       salt: salt.toString()
     };
 
-    showLog("Generating witness... ⏳");
+    console.log("Generating witness... ⏳");
     const { witness } = await noir.execute(inputs as Record<string, any>);
-    showLog("Generated witness... ✅");
+    console.log("Generated witness... ✅");
 
-    showLog("Generating proof... ⏳");
+    console.log("Generating proof... ⏳");
     const { proof, publicInputs } = await honk.generateProof(witness, { keccak: true });
     // Convert publicInputs to string array format expected by the contract
     const publicInputsStrings = publicInputs.map(input => input.toString());
-    showLog("Generated proof... ✅");
+    console.log("Generated proof... ✅");
 
     // Clean up
     await bb.destroy();

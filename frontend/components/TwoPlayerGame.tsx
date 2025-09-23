@@ -48,10 +48,6 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const showLog = (message: string) => {
-    addLog(message);
-  };
-
   // Use the custom hook for game state management
   const { gameState, player1Board, player2Board } = useGameState({
     contractAddress: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
@@ -233,7 +229,6 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       addLog(`🔍 Verifying guess "${gameState.lastGuess}" against your secret word "${storedSecret.word}"`);
 
       const { proof, publicInputs } = await generateProof(
-        showLog, 
         gameState.lastGuess,
         gameAddress
       );
