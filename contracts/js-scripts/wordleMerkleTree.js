@@ -4,7 +4,7 @@ import { Barretenberg, Fr } from '@aztec/bb.js';
 (async () => {
     try {
         // Load the saved tree
-        const tree = loadTreeFromFile('wordle-merkle-tree.json');
+        const tree = loadTreeFromFile('merkle-tree-fast.json');
         
         console.log(`🌳 Loaded tree with root: ${tree.root()}`);
         console.log(`📊 Total leaves: ${tree.totalLeaves}`);

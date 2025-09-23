@@ -19,12 +19,28 @@ const total_number = WORDLE.length; // returns 12653 log2 12653 = 13.63 -> 14 le
 
 import { Barretenberg, Fr } from '@aztec/bb.js';
 
+// Optimized: reuse single Barretenberg instance
+let globalBB = null;
+
+async function getBarretenberg() {
+  if (!globalBB) {
+    globalBB = await Barretenberg.new();
+  }
+  return globalBB;
+}
+
+async function destroyBarretenberg() {
+  if (globalBB) {
+    await globalBB.destroy();
+    globalBB = null;
+  }
+}
+
 async function hashLeftRight(left, right) {
-  const bb = await Barretenberg.new();
+  const bb = await getBarretenberg();
   const frLeft = Fr.fromString(left);
   const frRight = Fr.fromString(right);
   const hash = await bb.poseidon2Hash([frLeft, frRight]);
-  await bb.destroy();
   return hash.toString();
 }
 
@@ -180,20 +196,69 @@ const ZERO_VALUES = [
   "0x2f0b264ab5f5630b591af93d93ec2dfed28eef017b251e40905cdf7983689803",
 ];
 
-export async function merkleTree(leaves) {
-  const TREE_HEIGHT = 14;
-  const tree = new PoseidonTree(TREE_HEIGHT, ZERO_VALUES);
-
-  // Initialize tree with no leaves (all zeros)
-  await tree.init();
-
-  // Insert some leaves (from input)
-
-  for (const leaf of leaves) {
-    await tree.insert(leaf);
+// Optimized Merkle tree builder - level by level construction
+export async function buildMerkleTreeFast(leavesStr, treeHeight = 14) {
+  const bb = await getBarretenberg();
+  
+  // Convert leaves to Fr objects
+  let level = leavesStr.map(s => Fr.fromString(s));
+  
+  // Store all levels for proof generation
+  const levels = [level];
+  
+  for (let h = 0; h < treeHeight; h++) {
+    const zero = Fr.fromString(ZERO_VALUES[h]);
+    const nextLen = Math.ceil(level.length / 2);
+    
+    // Batch all node hashes for this level using Promise.all
+    const nextLevel = await Promise.all(
+      Array.from({ length: nextLen }, async (_, i) => {
+        const left = level[2 * i] ?? zero;
+        const right = level[2 * i + 1] ?? zero;
+        // Reuse the same bb instance
+        return await bb.poseidon2Hash([left, right]);
+      })
+    );
+    
+    levels.push(nextLevel);
+    level = nextLevel;
   }
+  
+  const root = level[0] ?? Fr.fromString(ZERO_VALUES[treeHeight]);
+  
+  return {
+    root: root.toString(),
+    height: treeHeight,
+    levels,
+    totalLeaves: leavesStr.length
+  };
+}
 
-  return tree;
+// Generate a Merkle proof using precomputed levels
+export function getProofFromLevels(levels, index) {
+  const height = levels.length - 1;
+  const pathElements = [];
+  const pathIndices = [];
+  
+  let idx = index;
+  for (let h = 0; h < height; h++) {
+    const siblingIdx = idx ^ 1; // toggle last bit
+    const sibling = levels[h][siblingIdx] ?? Fr.fromString(ZERO_VALUES[h]);
+    pathElements.push(sibling.toString());
+    pathIndices.push(idx & 1);
+    idx >>= 1;
+  }
+  
+  const root = levels[height][0]?.toString() ?? ZERO_VALUES[height];
+  const leaf = levels[0][index]?.toString();
+  if (!leaf) throw new Error("Leaf index out of range");
+  
+  return { root, pathElements, pathIndices, leaf };
+}
+
+// Backward compatibility function
+export async function merkleTree(leaves) {
+  return await buildMerkleTreeFast(leaves, 14);
 }
 
 export function englishWordToField(word) {
@@ -224,25 +289,55 @@ export function loadTreeFromFile(filename = 'merkle-tree.json') {
 }
 
 
-async function  main() {
-        console.log('🌳 Creating Merkle tree with 10 Wordle words...')
+async function main() {
+    console.log(`🌳 Creating Merkle tree with ${WORDLE.length} Wordle words...`);
+    console.time('Tree Generation');
+    
+    try {
+        // Convert words to field elements
+        const allWords = WORDLE.map(word => englishWordToField(word).toString());
         
-        const wordsToUse = WORDLE//.slice(WORDLE.length -20, WORDLE.length);
-       // console.log('📝 Words:', wordsToUse);
+        // Build tree using fast method
+        const treeData = await buildMerkleTreeFast(allWords, 14);
         
-        let allWords = wordsToUse.map(word => englishWordToField(word).toString());
-        // allWords = await Promise.all(allWords.map(async word => await poseidonHash([word])));
-        //console.log('Hashed leaves:', allWords);
-        const tree = await merkleTree(allWords);
-       
-        console.log(`✅ Merkle tree created with root: ${tree.root()}`);
+        console.timeEnd('Tree Generation');
+        console.log(`✅ Merkle tree created with root: ${treeData.root}`);
+        console.log(`📊 Total leaves: ${treeData.totalLeaves}`);
         
-        saveTreeToFile(tree, 'wordle-merkle-tree.json');
+        // Create a PoseidonTree-compatible object for saving
+        const tree = new PoseidonTree(14, ZERO_VALUES);
+        tree.totalLeaves = treeData.totalLeaves;
         
+        // Convert levels back to storage format for compatibility
+        treeData.levels.forEach((level, levelIndex) => {
+            level.forEach((node, nodeIndex) => {
+                tree.storage.set(PoseidonTree.indexToKey(levelIndex, nodeIndex), node.toString());
+            });
+        });
+        
+        saveTreeToFile(tree, 'merkle-tree.json');
+        
+        // Test with a few words
+        console.log('\n🔍 Testing proof generation...');
+        const testWords = ["about", "house", "world"];
+        
+        for (const testWord of testWords) {
+            const wordIndex = WORDLE.indexOf(testWord);
+            if (wordIndex !== -1) {
+                const proof = getProofFromLevels(treeData.levels, wordIndex);
+                console.log(`✅ "${testWord}" found at index ${wordIndex}, proof generated`);
+            } else {
+                console.log(`❌ "${testWord}" not found in dictionary`);
+            }
+        }
+        
+    } finally {
+        // Clean up Barretenberg instance
+        await destroyBarretenberg();
+    }
 }
-
 
 main().catch((err) => {
     console.error('Error creating tree:', err);
-    process.exit(1);
+    destroyBarretenberg().finally(() => process.exit(1));
 });
