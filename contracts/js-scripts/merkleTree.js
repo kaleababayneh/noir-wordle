@@ -9,8 +9,9 @@ const words = require('an-array-of-english-words');
 
 let WORDLE = words.filter((w) => 
     w.length === 5 && 
-    !w.includes("'") && !
-    w.includes("-") && !w.includes(" "));
+    !w.includes("'") && 
+    !w.includes("-") && 
+    !w.includes(" "));
 
 WORDLE = WORDLE.map(w => w.toLowerCase());
 
@@ -226,12 +227,12 @@ export function loadTreeFromFile(filename = 'merkle-tree.json') {
 async function  main() {
         console.log('🌳 Creating Merkle tree with 10 Wordle words...')
         
-        const wordsToUse = WORDLE.slice(WORDLE.length -20, WORDLE.length);
-        console.log('📝 Words:', wordsToUse);
+        const wordsToUse = WORDLE//.slice(WORDLE.length -20, WORDLE.length);
+       // console.log('📝 Words:', wordsToUse);
         
         let allWords = wordsToUse.map(word => englishWordToField(word).toString());
         // allWords = await Promise.all(allWords.map(async word => await poseidonHash([word])));
-        console.log('Hashed leaves:', allWords);
+        //console.log('Hashed leaves:', allWords);
         const tree = await merkleTree(allWords);
        
         console.log(`✅ Merkle tree created with root: ${tree.root()}`);
@@ -241,3 +242,7 @@ async function  main() {
 }
 
 
+main().catch((err) => {
+    console.error('Error creating tree:', err);
+    process.exit(1);
+});
