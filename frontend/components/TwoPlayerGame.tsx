@@ -180,6 +180,25 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     try {
       addLog(`Making guess: "${guess.toUpperCase()}" 🎯`);
       
+      // Generate Merkle proof for the word
+      const { generateMerkleProof, isWordInDictionary } = await import('../utils/merkleProof');
+      
+      // First check if word is in dictionary
+      if (!isWordInDictionary(guess.toLowerCase())) {
+        addLog(`❌ "${guess.toUpperCase()}" is not in the word dictionary`);
+        return;
+      }
+      
+      // Generate Merkle proof
+      const merkleProof = generateMerkleProof(guess.toLowerCase());
+      if (!merkleProof) {
+        addLog(`❌ Failed to generate Merkle proof for "${guess.toUpperCase()}"`);
+        return;
+      }
+      
+      addLog(`✅ Word "${guess.toUpperCase()}" validated in dictionary`);
+      addLog(`🔐 Generated Merkle proof (index: ${merkleProof.index})`);
+      
       // Immediately add to local state for instant UX feedback
       const newGuess = { word: guess.toLowerCase(), isVerified: false };
       
@@ -195,11 +214,16 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
         }));
       }
       
+      // Submit guess with Merkle proof
       writeContract({
         address: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
         abi: abi,
         functionName: 'guess',
-        args: [guess.toLowerCase()],
+        args: [
+          guess.toLowerCase(),
+          merkleProof.pathElements as `0x${string}`[],
+          merkleProof.pathIndices
+        ],
       });
     } catch (error) {
       addLog(`❌ Error making guess: ${error}`);

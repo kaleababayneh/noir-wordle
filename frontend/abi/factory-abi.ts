@@ -6,6 +6,11 @@ export const abi = [
                     "name": "_verifier",
                     "type": "address",
                     "internalType": "contract IVerifier"
+                },
+                {
+                    "name": "_hasher",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "nonpayable"
@@ -335,6 +340,19 @@ export const abi = [
                     "name": "",
                     "type": "uint256",
                     "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "i_hasher",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "view"

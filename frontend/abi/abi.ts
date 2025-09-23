@@ -6,6 +6,11 @@ export const abi = [
                     "name": "_i_verifier",
                     "type": "address",
                     "internalType": "contract IVerifier"
+                },
+                {
+                    "name": "_hasher",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "nonpayable"
@@ -44,6 +49,16 @@ export const abi = [
                     "name": "guess_word",
                     "type": "string",
                     "internalType": "string"
+                },
+                {
+                    "name": "pathElements",
+                    "type": "bytes32[]",
+                    "internalType": "bytes32[]"
+                },
+                {
+                    "name": "pathIndices",
+                    "type": "uint8[]",
+                    "internalType": "uint8[]"
                 }
             ],
             "outputs": [],
@@ -58,6 +73,19 @@ export const abi = [
                     "name": "",
                     "type": "uint32",
                     "internalType": "uint32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "i_hasher",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "view"
@@ -308,4 +336,4 @@ export const abi = [
             "name": "Wordle__InvalidProof",
             "inputs": []
         }
-    ] as const;
+    ] as const

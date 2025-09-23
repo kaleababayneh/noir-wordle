@@ -1,6 +1,15 @@
 // Main proof generation function
 export { generateProof } from './generateProof';
 
+// Merkle proof utilities
+export {
+  generateMerkleProof,
+  isWordInDictionary,
+  englishWordToField,
+  formatPathIndicesForSolidity,
+  loadMerkleTree
+} from './merkleProof';
+
 // Contract interaction utilities
 export {
   getCurrentTurn,

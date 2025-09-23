@@ -3,338 +3,89 @@ export const abi = [
             "type": "constructor",
             "inputs": [
                 {
-                    "name": "_verifier",
+                    "name": "_i_verifier",
                     "type": "address",
                     "internalType": "contract IVerifier"
+                },
+                {
+                    "name": "_hasher",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "nonpayable"
         },
         {
             "type": "function",
-            "name": "createGame",
+            "name": "getTurnToPlay",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getTurnToVerify",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "guess",
             "inputs": [
                 {
-                    "name": "_gameId",
+                    "name": "guess_word",
                     "type": "string",
                     "internalType": "string"
                 },
                 {
-                    "name": "_wordCommitmentHashes",
+                    "name": "pathElements",
                     "type": "bytes32[]",
                     "internalType": "bytes32[]"
-                }
-            ],
-            "outputs": [
+                },
                 {
-                    "name": "gameContract",
-                    "type": "address",
-                    "internalType": "address"
+                    "name": "pathIndices",
+                    "type": "uint8[]",
+                    "internalType": "uint8[]"
                 }
             ],
+            "outputs": [],
             "stateMutability": "nonpayable"
         },
         {
             "type": "function",
-            "name": "gameByContract",
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "gameContract",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "player1",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "player2",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "isActive",
-                    "type": "bool",
-                    "internalType": "bool"
-                },
-                {
-                    "name": "createdAt",
-                    "type": "uint256",
-                    "internalType": "uint256"
-                },
-                {
-                    "name": "gameId",
-                    "type": "string",
-                    "internalType": "string"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "gameIdToContract",
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "string",
-                    "internalType": "string"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "games",
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "uint256",
-                    "internalType": "uint256"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "gameContract",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "player1",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "player2",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "isActive",
-                    "type": "bool",
-                    "internalType": "bool"
-                },
-                {
-                    "name": "createdAt",
-                    "type": "uint256",
-                    "internalType": "uint256"
-                },
-                {
-                    "name": "gameId",
-                    "type": "string",
-                    "internalType": "string"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getActiveGames",
-            "inputs": [],
-            "outputs": [
-                {
-                    "name": "activeGames",
-                    "type": "tuple[]",
-                    "internalType": "struct WordleGameFactory.GameInfo[]",
-                    "components": [
-                        {
-                            "name": "gameContract",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player1",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player2",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "isActive",
-                            "type": "bool",
-                            "internalType": "bool"
-                        },
-                        {
-                            "name": "createdAt",
-                            "type": "uint256",
-                            "internalType": "uint256"
-                        },
-                        {
-                            "name": "gameId",
-                            "type": "string",
-                            "internalType": "string"
-                        }
-                    ]
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getGameContract",
-            "inputs": [
-                {
-                    "name": "_gameId",
-                    "type": "string",
-                    "internalType": "string"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getGameInfo",
-            "inputs": [
-                {
-                    "name": "_gameContract",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "tuple",
-                    "internalType": "struct WordleGameFactory.GameInfo",
-                    "components": [
-                        {
-                            "name": "gameContract",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player1",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player2",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "isActive",
-                            "type": "bool",
-                            "internalType": "bool"
-                        },
-                        {
-                            "name": "createdAt",
-                            "type": "uint256",
-                            "internalType": "uint256"
-                        },
-                        {
-                            "name": "gameId",
-                            "type": "string",
-                            "internalType": "string"
-                        }
-                    ]
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getPlayerGameDetails",
-            "inputs": [
-                {
-                    "name": "_player",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "gameInfos",
-                    "type": "tuple[]",
-                    "internalType": "struct WordleGameFactory.GameInfo[]",
-                    "components": [
-                        {
-                            "name": "gameContract",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player1",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "player2",
-                            "type": "address",
-                            "internalType": "address"
-                        },
-                        {
-                            "name": "isActive",
-                            "type": "bool",
-                            "internalType": "bool"
-                        },
-                        {
-                            "name": "createdAt",
-                            "type": "uint256",
-                            "internalType": "uint256"
-                        },
-                        {
-                            "name": "gameId",
-                            "type": "string",
-                            "internalType": "string"
-                        }
-                    ]
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getPlayerGames",
-            "inputs": [
-                {
-                    "name": "_player",
-                    "type": "address",
-                    "internalType": "address"
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]",
-                    "internalType": "address[]"
-                }
-            ],
-            "stateMutability": "view"
-        },
-        {
-            "type": "function",
-            "name": "getTotalGames",
+            "name": "guesser_attempts",
             "inputs": [],
             "outputs": [
                 {
                     "name": "",
-                    "type": "uint256",
-                    "internalType": "uint256"
+                    "type": "uint32",
+                    "internalType": "uint32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "i_hasher",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "contract Poseidon2"
                 }
             ],
             "stateMutability": "view"
@@ -354,74 +105,39 @@ export const abi = [
         },
         {
             "type": "function",
-            "name": "isGameIdAvailable",
+            "name": "joinGame",
             "inputs": [
                 {
-                    "name": "_gameId",
-                    "type": "string",
-                    "internalType": "string"
+                    "name": "_player",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "_word_commitment_hashes",
+                    "type": "bytes32[]",
+                    "internalType": "bytes32[]"
                 }
             ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "last_guess",
+            "inputs": [],
             "outputs": [
                 {
-                    "name": "available",
-                    "type": "bool",
-                    "internalType": "bool"
+                    "name": "",
+                    "type": "string",
+                    "internalType": "string"
                 }
             ],
             "stateMutability": "view"
         },
         {
             "type": "function",
-            "name": "joinGameByContract",
-            "inputs": [
-                {
-                    "name": "_gameContract",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "_wordCommitmentHashes",
-                    "type": "bytes32[]",
-                    "internalType": "bytes32[]"
-                }
-            ],
-            "outputs": [],
-            "stateMutability": "nonpayable"
-        },
-        {
-            "type": "function",
-            "name": "joinGameById",
-            "inputs": [
-                {
-                    "name": "_gameId",
-                    "type": "string",
-                    "internalType": "string"
-                },
-                {
-                    "name": "_wordCommitmentHashes",
-                    "type": "bytes32[]",
-                    "internalType": "bytes32[]"
-                }
-            ],
-            "outputs": [],
-            "stateMutability": "nonpayable"
-        },
-        {
-            "type": "function",
-            "name": "playerGames",
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address",
-                    "internalType": "address"
-                },
-                {
-                    "name": "",
-                    "type": "uint256",
-                    "internalType": "uint256"
-                }
-            ],
+            "name": "player1",
+            "inputs": [],
             "outputs": [
                 {
                     "name": "",
@@ -432,46 +148,104 @@ export const abi = [
             "stateMutability": "view"
         },
         {
-            "type": "event",
-            "name": "GameCreated",
+            "type": "function",
+            "name": "player2",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "verifier_attempts",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint32",
+                    "internalType": "uint32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "verify_guess",
             "inputs": [
                 {
-                    "name": "gameContract",
+                    "name": "_proof",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                },
+                {
+                    "name": "result",
+                    "type": "bytes32[]",
+                    "internalType": "bytes32[]"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "winner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
                     "type": "address",
-                    "indexed": true,
                     "internalType": "address"
-                },
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "word_commitment_hash1",
+            "inputs": [
                 {
-                    "name": "creator",
-                    "type": "address",
-                    "indexed": true,
-                    "internalType": "address"
-                },
-                {
-                    "name": "gameId",
-                    "type": "string",
-                    "indexed": false,
-                    "internalType": "string"
-                },
-                {
-                    "name": "gameIndex",
+                    "name": "",
                     "type": "uint256",
-                    "indexed": false,
                     "internalType": "uint256"
                 }
             ],
-            "anonymous": false
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "word_commitment_hash2",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
         },
         {
             "type": "event",
-            "name": "PlayerJoinedGame",
+            "name": "Wordle__CorrectGuess",
             "inputs": [
-                {
-                    "name": "gameContract",
-                    "type": "address",
-                    "indexed": true,
-                    "internalType": "address"
-                },
                 {
                     "name": "player",
                     "type": "address",
@@ -479,7 +253,7 @@ export const abi = [
                     "internalType": "address"
                 },
                 {
-                    "name": "gameId",
+                    "name": "guess",
                     "type": "string",
                     "indexed": false,
                     "internalType": "string"
@@ -488,28 +262,78 @@ export const abi = [
             "anonymous": false
         },
         {
-            "type": "error",
-            "name": "WordleFactory__GameAlreadyFull",
-            "inputs": []
+            "type": "event",
+            "name": "Wordle__GuessResult",
+            "inputs": [
+                {
+                    "name": "player",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "guess",
+                    "type": "string",
+                    "indexed": false,
+                    "internalType": "string"
+                },
+                {
+                    "name": "result",
+                    "type": "bytes32[]",
+                    "indexed": false,
+                    "internalType": "bytes32[]"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__NewGuess",
+            "inputs": [
+                {
+                    "name": "player",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "guess",
+                    "type": "string",
+                    "indexed": false,
+                    "internalType": "string"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__Player1Joined",
+            "inputs": [
+                {
+                    "name": "player1",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Wordle__Player2Joined",
+            "inputs": [
+                {
+                    "name": "player2",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
         },
         {
             "type": "error",
-            "name": "WordleFactory__GameIdAlreadyExists",
-            "inputs": []
-        },
-        {
-            "type": "error",
-            "name": "WordleFactory__GameNotFound",
-            "inputs": []
-        },
-        {
-            "type": "error",
-            "name": "WordleFactory__InvalidCommitmentHashes",
-            "inputs": []
-        },
-        {
-            "type": "error",
-            "name": "WordleFactory__PlayerAlreadyInGame",
+            "name": "Wordle__InvalidProof",
             "inputs": []
         }
-    ] as const;
+    ] as const
