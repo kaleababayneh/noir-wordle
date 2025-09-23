@@ -2,12 +2,16 @@
 pragma solidity ^0.8.24;
 
 import { IVerifier } from "./Verifier.sol";
+import { Poseidon2, Field } from "../lib/poseidon2-evm/src/Poseidon2.sol";
 
 contract Wordle {
 
     IVerifier public immutable i_verifier;
     bytes32[5] public word_commitment_hash1;
     bytes32[5] public word_commitment_hash2;
+    Poseidon2 public immutable i_hasher;
+
+    bytes32 merkle_root = bytes32(0x0ae4b821bcbfcc5f6a3b711a48ceb8a86baad969d64fb90cfd2e2b3670e37dc7);
 
     string public last_guess;
     address public player1 = address(0);
@@ -36,9 +40,10 @@ contract Wordle {
         _;
     }
 
-    constructor(IVerifier _i_verifier) {
+    constructor(IVerifier _i_verifier, Poseidon2 _hasher) {
         require(address(_i_verifier) != address(0), "Invalid verifier address");
         i_verifier = _i_verifier;
+        i_hasher = _hasher;
         // player1 and player2 remain address(0) until they join via joinGame()
     }
 
@@ -72,7 +77,7 @@ contract Wordle {
         }
     }
 
-    function guess(string memory guess_word) public onlyIfGameNotOver {
+    function guess(string memory guess_word, bytes32[] memory pathElements, uint8[] memory pathIndices) public onlyIfGameNotOver {
         require(player2 != address(0), "Player 2 not joined yet");
         address whose_turn = getTurnToPlay();
         require(msg.sender == whose_turn, "Not your turn");
@@ -83,6 +88,24 @@ contract Wordle {
         require(guess_bytes.length == 5, "Invalid guess length");
         
         // Validate each character is a lowercase letter
+
+        bytes32 currentLevelHash = bytes32(abi.encodePacked(guess_word));
+        bytes32 left;
+        bytes32 right;
+        for (uint32 i = 0; i < pathElements.length; i++) {
+            bytes32 pathElement = pathElements[i];
+            if (pathIndices[i] == 0) {
+                left = currentLevelHash;
+                right = pathElement;
+            } else {
+                left = pathElement;
+                right = currentLevelHash;
+            }
+            // currentLevelHash = Field.toBytes32(i_hasher.hash_2(Field.toField(left), Field.toField(right)));
+
+            currentLevelHash = Field.toBytes32(i_hasher.hash_2(Field.toField(left), Field.toField(right)));
+        }
+
         for (uint i = 0; i < 5; i++) {
             require(guess_bytes[i] >= 0x61 && guess_bytes[i] <= 0x7A, "Only lowercase letters allowed");
         }
@@ -97,8 +120,28 @@ contract Wordle {
         address whose_turn_to_play = getTurnToPlay();
         require(msg.sender == whose_turn_to_verify, "Not your turn to verify");
         require(guesser_attempts - verifier_attempts == 1, "No guess to verify");
+
+        /**
+         * 
+         let currentHash = leaf;
+    for (let i = 0; i < pathElements.length; i++) {
+        const pathElement = pathElements[i];
+        const isLeft = pathIndices[i] === 0;
         
-        // Validate result array
+        const [left, right] = isLeft 
+            ? [currentHash, pathElement] 
+            : [pathElement, currentHash];
+        
+        const frLeft = Fr.fromString(left);
+        const frRight = Fr.fromString(right);
+        
+        currentHash = (await bb.poseidon2Hash([frLeft, frRight])).toString();
+    }
+         */
+
+
+
+
         require(result.length == 5, "Result must have exactly 5 elements");
         
         // Validate each result is 0, 1, or 2
