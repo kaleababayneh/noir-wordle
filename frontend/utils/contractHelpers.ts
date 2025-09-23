@@ -124,9 +124,10 @@ export async function fetchWordCommitmentHashes(): Promise<WordCommitmentResult>
 /**
  * Generate commitment hashes for a word (for game creation)
  * @param word - 5-letter word to generate commitments for
+ * @param gameContract - game contract address to store the secret for
  * @returns Array of commitment hashes
  */
-export async function generateCommitmentHashes(word: string): Promise<`0x${string}`[]> {
+export async function generateCommitmentHashes(word: string, gameContract?: string): Promise<`0x${string}`[]> {
   if (word.length !== 5) {
     throw new Error('Word must be exactly 5 letters');
   }
@@ -136,12 +137,29 @@ export async function generateCommitmentHashes(word: string): Promise<`0x${strin
   try {
     const salt = generateSecureSalt();
     const commitmentHashes: `0x${string}`[] = [];
+    const letterCodes: number[] = [];
     
+    // Generate commitments and collect letter codes
     for (let i = 0; i < 5; i++) {
       const letter = word[i];
       const letterCode = letter.charCodeAt(0);
-      const commitment = generateWordCommitment(letterCode, salt);
+      letterCodes.push(letterCode);
+      
+      const commitment = await generateWordCommitment(letterCode, salt);
       commitmentHashes.push(commitment as `0x${string}`);
+    }
+    
+    // Store the secret word locally for later verification
+    if (gameContract) {
+      const secretData = {
+        word: word.toLowerCase(),
+        letterCodes,
+        salt: salt.toString(),
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem(`wordle_secret_${gameContract}`, JSON.stringify(secretData));
+      console.log(`🔐 Stored secret for game ${gameContract}`);
     }
     
     console.log(`Generated commitment hashes for word "${word}":`, commitmentHashes);
@@ -149,5 +167,29 @@ export async function generateCommitmentHashes(word: string): Promise<`0x${strin
   } catch (error) {
     console.error('Error generating commitment hashes:', error);
     throw error;
+  }
+}
+
+/**
+ * Retrieve stored secret word for a game
+ * @param gameContract - game contract address
+ * @returns Secret data or null if not found
+ */
+export function getStoredSecret(gameContract: string): {
+  word: string;
+  letterCodes: number[];
+  salt: string;
+  timestamp: number;
+} | null {
+  try {
+    const secretData = localStorage.getItem(`wordle_secret_${gameContract}`);
+    if (!secretData) {
+      return null;
+    }
+    
+    return JSON.parse(secretData);
+  } catch (error) {
+    console.error('Error retrieving stored secret:', error);
+    return null;
   }
 }

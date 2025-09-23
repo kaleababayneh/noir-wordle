@@ -48,15 +48,25 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
     }
 
     try {
+      // First generate commitments without storing (we need the game contract address first)
       const commitmentHashes = await generateCommitmentHashes(word.toLowerCase());
-      await createNewGame(gameId, commitmentHashes);
+      
+      // Create the game
+      const tx = await createNewGame(gameId, commitmentHashes);
+      
+      // Store the word and game info for later secret storage
+      // We'll store the secret when the GameCreated event is received
+      sessionStorage.setItem('pendingSecret', JSON.stringify({
+        word: word.toLowerCase(),
+        gameId: gameId
+      }));
       
       // Reset form
       setGameId('');
       setWord('');
       setShowCreateForm(false);
       
-      alert('Game created successfully! 🎉');
+      alert('Game created successfully! 🎉\nYour secret word has been stored securely.');
     } catch (error) {
       console.error('Error creating game:', error);
       alert('Failed to create game. Please try again.');

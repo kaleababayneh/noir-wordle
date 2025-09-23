@@ -50,14 +50,31 @@ export function useWordleFactory() {
     abi: factoryAbi,
     eventName: 'GameCreated',
     onLogs(logs) {
-      logs.forEach((log) => {
-        const { creator, gameId } = log.args as { 
+      logs.forEach(async (log) => {
+        const { gameContract, creator, gameId } = log.args as { 
           gameContract: string; 
           creator: string; 
           gameId: string;
         };
         
-        console.log(`🎮 New game created: ${gameId} by ${creator}`);
+        console.log(`🎮 New game created: ${gameId} by ${creator} at ${gameContract}`);
+        
+        // If this is the current user's game, store the secret
+        if (address && creator.toLowerCase() === address.toLowerCase()) {
+          const pendingSecret = sessionStorage.getItem('pendingSecret');
+          if (pendingSecret) {
+            const { word, gameId: pendingGameId } = JSON.parse(pendingSecret);
+            if (pendingGameId === gameId) {
+              // Store the secret with the game contract address
+              const { generateCommitmentHashes } = await import('../utils/contractHelpers');
+              await generateCommitmentHashes(word, gameContract);
+              
+              // Clear the pending secret
+              sessionStorage.removeItem('pendingSecret');
+              console.log(`🔐 Secret stored for game ${gameId} at ${gameContract}`);
+            }
+          }
+        }
         
         // Refetch data
         refetchTotalGames();

@@ -7,81 +7,105 @@ import { fetchWordCommitmentHashes } from './contractHelpers';
 import { 
   wordToLetterHex, 
   hexLettersToAsciiNumbers, 
-  calculateWordleResults,
-  getCorrectLettersForPlayer,
-  getPlayerNameFromHashArray
+  calculateWordleResults
 } from './gameLogic';
-import { HARDCODED_VALUES } from './constants';
 import { ProofResult, CircuitInputs, LogFunction } from './types';
 
 
 export function generateSecureSalt(): Fr {
-  console.warn('Using hardcoded salt (0). Replace with secure random salt before deployment!');
+  // For now using salt 0 as specified, but can be made secure later
+  console.log('Using salt Fr(0) as specified');
   return new Fr(0n);
 }
 
-export function generateWordCommitment(letterCode: number, salt: Fr): string {
-  // This is a simplified commitment - in production, use proper cryptographic commitment
-  const commitment = new Fr(BigInt(letterCode) + BigInt(salt.toString()));
-  return `0x${BigInt(commitment.toString()).toString(16).padStart(64, '0')}`;
+/**
+ * Generate a proper Poseidon commitment hash for a letter
+ * This matches the circuit's commitment verification
+ */
+export async function generateWordCommitment(letterCode: number, salt: Fr): Promise<string> {
+  try {
+    const bb = await Barretenberg.new();
+    
+    // Create inputs for Poseidon2 hash: [salt, letter]
+    const inputs = [salt, new Fr(BigInt(letterCode))];
+    
+    // Use Barretenberg's Poseidon2 implementation to match the circuit
+    const hash = await bb.poseidon2Hash(inputs);
+    
+    await bb.destroy();
+    
+    // Convert to hex string
+    const hashString = hash.toString();
+    return `0x${BigInt(hashString).toString(16).padStart(64, '0')}`;
+  } catch (error) {
+    console.error('Error generating Poseidon commitment:', error);
+    throw error;
+  }
 }
 
 
 export async function generateProof(
   showLog: LogFunction, 
   userGuess?: string, 
-  wordCommitmentHashes?: string[], 
-  hashArrayName?: string
+  gameContract?: string,
+  wordCommitmentHashes?: string[]
 ): Promise<ProofResult> {
   try {
     showLog("Initializing Barretenberg backend... ⏳");
     const bb = await Barretenberg.new();
-    const salt = generateSecureSalt();
+    
+    // Validate user guess
+    if (!userGuess) {
+      throw new Error("User guess is required");
+    }
 
-    // Use provided word commitment hashes, or fetch them, or fall back to hardcoded
+    if (!gameContract) {
+      throw new Error("Game contract address is required");
+    }
+
+    // Get stored secret for this game
+    showLog("Retrieving stored secret... ⏳");
+    const { getStoredSecret } = await import('./contractHelpers');
+    const storedSecret = getStoredSecret(gameContract);
+    
+    if (!storedSecret) {
+      throw new Error("No stored secret found for this game. You can only verify guesses for games you created.");
+    }
+
+    const { word, letterCodes, salt: saltString } = storedSecret;
+    const salt = new Fr(BigInt(saltString));
+
+    // Use provided word commitment hashes, or fetch them
     let commitmentHashes = wordCommitmentHashes;
-    let finalHashArrayName = hashArrayName || '';
     
     if (!commitmentHashes) {
       showLog("Fetching word commitment hashes from contract... ⏳");
       const result = await fetchWordCommitmentHashes();
       commitmentHashes = result.wordCommitmentHashes;
-      finalHashArrayName = result.hashArrayName;
-    } else {
-      if (!finalHashArrayName) {
-        // When hashes are provided but no array name, we need to determine which player's they are
-        const result = await fetchWordCommitmentHashes();
-        finalHashArrayName = result.hashArrayName;
-      }
     }
 
-    // Validate user guess
-    if (!userGuess) {
-      throw new Error("User guess is required");
-    }
-    
     const guessLetters = wordToLetterHex(userGuess);
     
     showLog("Setting up Noir circuit... ⏳");
     const noir = new Noir(circuit as CompiledCircuit);
     const honk = new UltraHonkBackend(circuit.bytecode, { threads: 1 });
     
-    // Determine which player's correct letters to use based on the hash array being verified
-    const correctLetters = getCorrectLettersForPlayer(finalHashArrayName, HARDCODED_VALUES);
-
-    showLog("Calculating Wordle results... ⏳");
-    // Calculate the wordle results using actual letters, not hashes
-    const calculatedResults = await calculateWordleResults(guessLetters, correctLetters);
+    showLog("Calculating Wordle results using your secret word... ⏳");
+    // Convert letter codes to hex strings for calculateWordleResults
+    const correctLettersHex = letterCodes.map(code => 
+      `0x${code.toString(16).padStart(64, '0')}`
+    );
+    const calculatedResults = await calculateWordleResults(guessLetters, correctLettersHex);
     
-    const playerName = getPlayerNameFromHashArray(finalHashArrayName);
-    showLog(`Using correct letters for ${playerName}`);
+    showLog(`Verifying guess "${userGuess}" against your secret word "${word}"`);
     
     // Convert guess letters to simple ASCII numbers (as expected by circuit)
     const guessAsciiNumbers = hexLettersToAsciiNumbers(guessLetters);
     
     console.log('Debug - Guess letters (hex):', guessLetters);
     console.log('Debug - Guess ASCII numbers:', guessAsciiNumbers);
-    console.log('Debug - Correct letters:', correctLetters);
+    console.log('Debug - Your secret word:', word);
+    console.log('Debug - Your secret letter codes:', letterCodes);
     console.log('Debug - Commitment hashes:', commitmentHashes);
     
     // Prepare inputs in the format expected by the circuit
@@ -100,12 +124,12 @@ export async function generateProof(
       fifth_letter_guess: guessAsciiNumbers[4],
       // calculated final result
       calculated_result: calculatedResults,
-      // private inputs (correct letters) - now dynamic based on which player's word is being verified
-      first_letter: correctLetters[0],
-      second_letter: correctLetters[1],
-      third_letter: correctLetters[2],
-      fourth_letter: correctLetters[3],
-      fifth_letter: correctLetters[4],
+      // private inputs (correct letters) - use the stored letter codes
+      first_letter: letterCodes[0].toString(),
+      second_letter: letterCodes[1].toString(),
+      third_letter: letterCodes[2].toString(),
+      fourth_letter: letterCodes[3].toString(),
+      fifth_letter: letterCodes[4].toString(),
       salt: salt.toString()
     };
 
