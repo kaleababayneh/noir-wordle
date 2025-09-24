@@ -19,6 +19,7 @@ export function GameStatus({
 }: GameStatusProps) {
   
   // Format address for display
+  console.log("Current turn address:", currentTurn);
   const formatAddress = (address: string) => {
     if (!address || address === "0x0000000000000000000000000000000000000000") return "None";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
