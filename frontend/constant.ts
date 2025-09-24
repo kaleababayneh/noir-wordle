@@ -1,10 +1,10 @@
 //export const WORDLE_CONTRACT_ADDRESS = "0x000235f5DaE652C34d781e79193917e07B550032" // Updated Wordle contract address with fixed events
-export const WORDLE_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000" // Updated Wordle contract address with fixed events
+export const WORDLE_CONTRACT_ADDRESS =   "0x0000000000000000000000000000000000000000" // Updated Wordle contract address with fixed events
 
-// Contract addresses on Sepolia - Updated with Merkle proof support
-export const WORDLE_FACTORY_ADDRESS = "0x89f235f5DaE652C34d781e79193917e07B550032"; // New factory with Merkle proof support
-export const HONK_VERIFIER_ADDRESS = "0xc5f13a26ef26FAD35B87AE675bd8fE0B112B1b07"; // Honk verifier for ZK proofs
-export const POSEIDON2_HASHER_ADDRESS = "0x2E36b8b4a2ABA96Ff63e7B65d86891D2a7416b3b"; // Poseidon2 hasher for Merkle proofs
+// Contract addresses on Base Sepolia - Fresh deployment
+export const WORDLE_FACTORY_ADDRESS = "0x0B314CFD1fdB78EdF2F7890e556dD4761E86fb43"; // Fresh Base Sepolia deployment
+export const HONK_VERIFIER_ADDRESS = "0xca60c3cc014c530f9E2fb4B102A4B978269E7373"; // HonkVerifier on Base Sepolia
+export const POSEIDON2_HASHER_ADDRESS = "0x8387Dd855C8eb9b0A7525c3DF18Db955E79f5A5e"; // Poseidon2 hasher on Base Sepolia
 
 // // Player addresses derived from private keys
 // export const PLAYER_1_ADDRESS = "0x532581141fA3a833090F95eBB76aCEa8Eaf9dD7d"

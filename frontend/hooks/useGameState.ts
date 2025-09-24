@@ -174,26 +174,32 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         });
         
         // WORKAROUND: The contract emits the wrong player (next to play instead of guesser)  
-        // We need to infer the actual guesser from the current verifier attempts
-        // The logic: verifier_attempts tracks how many verifications have been completed
-        // - If verifier_attempts = 1 (odd), Player 2 just verified Player 1's guess
-        // - If verifier_attempts = 2 (even), Player 1 just verified Player 2's guess
+        // We need to determine the actual guesser more reliably
+        // Logic: Check both player boards to see who has this unverified guess
         
-        // Get current verifier attempts count to determine who made the guess
-        const currentVerifierAttempts = Number(verifierAttempts) || 0;
-        
-        // Determine who made the guess being verified
         let actualGuesser: string;
-        if (currentVerifierAttempts % 2 === 1) {
-          // Odd verifier attempts means Player 2 just verified, so Player 1 made the guess
-          actualGuesser = player1 as string || '';
-        } else {
-          // Even verifier attempts means Player 1 just verified, so Player 2 made the guess  
-          actualGuesser = player2 as string || '';
-        }
         
-        // Fallback to event player if we can't determine the addresses
-        if (!actualGuesser || actualGuesser === '0x0000000000000000000000000000000000000000') {
+        // Check Player 1's board for this unverified guess
+        const player1HasGuess = player1Board.guesses.some(g => 
+          g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
+        );
+        
+        // Check Player 2's board for this unverified guess  
+        const player2HasGuess = player2Board.guesses.some(g => 
+          g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
+        );
+        
+        if (player1HasGuess && !player2HasGuess) {
+          actualGuesser = player1 as string || '';
+        } else if (player2HasGuess && !player1HasGuess) {
+          actualGuesser = player2 as string || '';
+        } else if (player1HasGuess && player2HasGuess) {
+          // Both have the guess? This shouldn't happen, use event player as fallback
+          console.warn('Both players have unverified guess, using event player:', { guess, player });
+          actualGuesser = player;
+        } else {
+          // Neither has the guess? This might happen if verification is very fast, use event player
+          console.warn('No player has unverified guess, using event player:', { guess, player });
           actualGuesser = player;
         }
         
@@ -203,7 +209,7 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         //   hashedGuess: guess, 
         //   rawResult: result,
         //   decodedResults: numericResults,
-        //   currentVerifierAttempts: currentVerifierAttempts,
+        //   currentVerifier: turnToVerify,
         //   player1Address: player1,
         //   player2Address: player2
         // });
@@ -233,16 +239,30 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
         });
         
         // Update the appropriate player's board with verification results
-        // console.log('Updating board with verification results:', { actualGuesser, guess, numericResults, player1, player2 });
+        console.log('🔍 GuessResult: Updating board with verification results:', { 
+          eventPlayer: player,
+          actualGuesser, 
+          guess, 
+          numericResults, 
+          player1HasGuess,
+          player2HasGuess,
+          player1: player1, 
+          player2: player2,
+          isPlayer1Match: player1 && actualGuesser.toLowerCase() === (player1 as string).toLowerCase(),
+          isPlayer2Match: player2 && actualGuesser.toLowerCase() === (player2 as string).toLowerCase()
+        });
         
         if (player1 && actualGuesser.toLowerCase() === (player1 as string).toLowerCase()) {
-          console.log('Updating player1 board with verification');
+          console.log('🟦 Updating player1 board with verification');
           setPlayer1Board(prev => {
+            console.log('🟦 Player1 board before update:', { 
+              guesses: prev.guesses.map(g => ({word: g.word, isVerified: g.isVerified, hasResults: !!g.results}))
+            });
             // Find the exact matching guess by word (now that guess is unhashed)
             const matchingGuessIndex = prev.guesses.findIndex(g => 
               g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
             );
-            console.log('Found matching guess for player1 at index:', matchingGuessIndex);
+            console.log('🟦 Found matching guess for player1 at index:', matchingGuessIndex);
             
             if (matchingGuessIndex !== -1) {
               const updatedGuesses = [...prev.guesses];
@@ -260,18 +280,21 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
               });
               return { guesses: updatedGuesses };
             } else {
-              console.log('No matching unverified guess found for player1:', { guess, existingGuesses: prev.guesses });
+              console.log('❌ No matching unverified guess found for player1:', { guess, existingGuesses: prev.guesses });
               return prev;
             }
           });
         } else if (player2 && actualGuesser.toLowerCase() === (player2 as string).toLowerCase()) {
-          console.log('Updating player2 board with verification');
+          console.log('🟩 Updating player2 board with verification');
           setPlayer2Board(prev => {
+            console.log('🟩 Player2 board before update:', { 
+              guesses: prev.guesses.map(g => ({word: g.word, isVerified: g.isVerified, hasResults: !!g.results}))
+            });
             // Find the exact matching guess by word (now that guess is unhashed)
             const matchingGuessIndex = prev.guesses.findIndex(g => 
               g.word.toLowerCase() === guess.toLowerCase() && !g.isVerified
             );
-            console.log('Found matching guess for player2 at index:', matchingGuessIndex);
+            console.log('🟩 Found matching guess for player2 at index:', matchingGuessIndex);
             
             if (matchingGuessIndex !== -1) {
               const updatedGuesses = [...prev.guesses];
@@ -289,7 +312,7 @@ export function useGameState({ contractAddress, getPlayerName, addLog }: UseGame
               });
               return { guesses: updatedGuesses };
             } else {
-              console.log('No matching unverified guess found for player2:', { guess, existingGuesses: prev.guesses });
+              console.log('❌ No matching unverified guess found for player2:', { guess, existingGuesses: prev.guesses });
               return prev;
             }
           });

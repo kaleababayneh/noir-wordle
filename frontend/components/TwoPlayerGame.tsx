@@ -146,15 +146,14 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
         }
       });
     } else {
-      // For opponent's board: only show verified guesses
+      // For opponent's board: show ALL guesses (verified and unverified)
+      // This ensures both players see the same board state and color updates
       contractBoard.forEach(contractGuess => {
-        if (contractGuess.isVerified) {
-          hybrid.push({
-            word: contractGuess.word,
-            isVerified: true,
-            results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
-          });
-        }
+        hybrid.push({
+          word: contractGuess.word,
+          isVerified: contractGuess.isVerified,
+          results: contractGuess.results?.map((r: any) => typeof r === 'string' ? parseInt(r) : r)
+        });
       });
     }
     
@@ -164,15 +163,20 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const finalPlayer1Board = createUserBoard(player1Board, 'player1', isCurrentUserPlayer1);
   const finalPlayer2Board = createUserBoard(player2Board, 'player2', isCurrentUserPlayer2);
 
-  // Debug logging for hybrid board approach (reduced frequency)
-  // console.log('TwoPlayerGame hybrid board system:', {
-  //   contractPlayer1Board: player1Board,
-  //   contractPlayer2Board: player2Board,
-  //   pendingPlayer1: pendingGuesses.player1,
-  //   pendingPlayer2: pendingGuesses.player2,
-  //   finalPlayer1Board,
-  //   finalPlayer2Board
-  // });
+  // Debug logging for hybrid board approach  
+  console.log('🎮 TwoPlayerGame board state:', {
+    currentUser: currentAccount,
+    isCurrentUserPlayer1,
+    isCurrentUserPlayer2,
+    player1Address: gameState.player1,
+    player2Address: gameState.player2,
+    contractPlayer1Board: player1Board.length,
+    contractPlayer2Board: player2Board.length,
+    finalPlayer1Board: finalPlayer1Board.length,
+    finalPlayer2Board: finalPlayer2Board.length,
+    player1Verified: finalPlayer1Board.filter(g => g.isVerified).length,
+    player2Verified: finalPlayer2Board.filter(g => g.isVerified).length
+  });
 
   // No cleanup needed - pending guesses stay to maintain chronological order
   // Verification results are merged in createHybridBoard()

@@ -113,7 +113,7 @@ export function PlayerSection({
         ) : (
           <div className="text-center py-4 text-gray-500">
             <p>This is your opponent's board</p>
-            <p className="text-sm">You can only see their verified guesses</p>
+            <p className="text-sm">You can see all their guesses and verification results</p>
           </div>
         )}
 
