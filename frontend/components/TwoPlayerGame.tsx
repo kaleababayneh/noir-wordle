@@ -365,7 +365,6 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           lastGuess={gameState.lastGuess}
           currentTurn={gameState.currentTurn}
           winner={gameState.winner}
-          getPlayerName={getPlayerName}
         />
 
         {/* Split Game Interface */}

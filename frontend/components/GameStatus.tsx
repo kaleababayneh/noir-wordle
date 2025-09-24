@@ -3,10 +3,9 @@ interface GameStatusProps {
   verifierAttempts: number;
   gameStarted: boolean;
   gameEnded: boolean;
-  lastGuess: string;
+  lastGuess?: string;
   currentTurn: string;
   winner: string;
-  getPlayerName: (address: string) => string;
 }
 
 export function GameStatus({
@@ -16,9 +15,15 @@ export function GameStatus({
   gameEnded,
   lastGuess,
   currentTurn,
-  winner,
-  getPlayerName
+  winner
 }: GameStatusProps) {
+  
+  // Format address for display
+  const formatAddress = (address: string) => {
+    if (!address || address === "0x0000000000000000000000000000000000000000") return "None";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
@@ -43,9 +48,7 @@ export function GameStatus({
           <div className="text-sm text-gray-600">Last Guess</div>
         </div>
         <div className="bg-yellow-100 rounded-lg p-4">
-          <div className="text-sm font-medium text-yellow-600">
-            {gameEnded ? getPlayerName(winner) : getPlayerName(currentTurn) || "None"}
-          </div>
+                  <div className="text-gray-600">Winner: {winner ? formatAddress(winner) : "None"}</div>
           <div className="text-sm text-gray-600">{gameEnded ? "Winner" : "Current Turn"}</div>
         </div>
       </div>

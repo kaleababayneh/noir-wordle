@@ -39,3 +39,8 @@ echo "=== NEW GAME STATE ===" && echo "Player 1:" && cast call 0x155E78fb3b3D799
 
 kaleab@Kaleabs-MacBook-Air contracts % forge script script/DeployAll.s.sol --rpc-url https://eth-sepoli
 a.g.alchemy.com/v2/yfYMfVW6oD82nAyfAQmuz --private-key xx --broadcast
+
+
+
+
+ ngrok http --domain=super-ghost-intimate.ngrok-free.app 5173
