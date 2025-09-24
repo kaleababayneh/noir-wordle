@@ -47,7 +47,20 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       return;
     }
 
+    if (!/^[a-zA-Z]+$/.test(word)) {
+      alert('Word must contain only letters');
+      return;
+    }
+
     try {
+      // Validate word exists in the Merkle tree dictionary
+      const { isWordInDictionary } = await import('../utils/merkleProof');
+      
+      if (!isWordInDictionary(word.toLowerCase())) {
+        alert(`❌ "${word.toUpperCase()}" is not in the word dictionary. Please choose a valid English word.`);
+        return;
+      }
+
       // First generate commitments without storing (we need the game contract address first)
       const commitmentHashes = await generateCommitmentHashes(word.toLowerCase());
       console.log("Commitment hashes generated:", commitmentHashes);
@@ -91,6 +104,11 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       return;
     }
 
+    if (!/^[a-zA-Z]+$/.test(word)) {
+      alert('Word must contain only letters');
+      return;
+    }
+
     // Double-check if user is trying to join their own game
     console.log('🔍 Join attempt debug:', {
       userAddress: address,
@@ -112,6 +130,20 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
     // Additional validation: Check if game still exists and is joinable
     if (game.player2 && game.player2 !== '0x0000000000000000000000000000000000000000') {
       alert('❌ This game is already full! Please choose another game.');
+      return;
+    }
+
+    // Validate word exists in the Merkle tree dictionary
+    try {
+      const { isWordInDictionary } = await import('../utils/merkleProof');
+      
+      if (!isWordInDictionary(word.toLowerCase())) {
+        alert(`❌ "${word.toUpperCase()}" is not in the word dictionary. Please choose a valid English word.`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error validating word in dictionary:', error);
+      alert('❌ Failed to validate word. Please try again.');
       return;
     }
 
