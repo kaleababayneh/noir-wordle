@@ -1,4 +1,5 @@
-export const WORDLE_CONTRACT_ADDRESS = "0x64b8D9240305F1c5A00d0AAF7C575f51030681ac" // Updated Wordle contract address with fixed events
+//export const WORDLE_CONTRACT_ADDRESS = "0x000235f5DaE652C34d781e79193917e07B550032" // Updated Wordle contract address with fixed events
+export const WORDLE_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000" // Updated Wordle contract address with fixed events
 
 // Contract addresses on Sepolia - Updated with Merkle proof support
 export const WORDLE_FACTORY_ADDRESS = "0x89f235f5DaE652C34d781e79193917e07B550032"; // New factory with Merkle proof support

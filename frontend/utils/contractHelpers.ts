@@ -5,16 +5,15 @@
 import { readContract } from '@wagmi/core';
 import { config } from '../config';
 import { abi } from '../abi/abi';
-import { WORDLE_CONTRACT_ADDRESS } from '../constant';
 import { WordCommitmentResult } from './types';
 
 /**
  * Get the current player whose turn it is to make a guess
  */
-export async function getCurrentTurn(): Promise<string> {
+export async function getCurrentTurn(gameAddress: `0x${string}`): Promise<string> {
   try {
     const currentTurn = await readContract(config, {
-      address: WORDLE_CONTRACT_ADDRESS,
+      address: gameAddress,
       abi: abi,
       functionName: 'getTurnToPlay',
     }) as `0x${string}`;
@@ -29,10 +28,10 @@ export async function getCurrentTurn(): Promise<string> {
 /**
  * Get the player whose turn it is to verify the current guess
  */
-export async function getTurnToVerify(): Promise<string> {
+export async function getTurnToVerify(gameAddress: `0x${string}`): Promise<string> {
   try {
     const turnToVerify = await readContract(config, {
-      address: WORDLE_CONTRACT_ADDRESS,
+      address: gameAddress,
       abi: abi,
       functionName: 'getTurnToVerify',
     }) as `0x${string}`;
@@ -47,10 +46,10 @@ export async function getTurnToVerify(): Promise<string> {
 /**
  * Get player1 address from the contract
  */
-export async function getPlayer1Address(): Promise<string> {
+export async function getPlayer1Address(gameAddress: `0x${string}`): Promise<string> {
   try {
     const player1 = await readContract(config, {
-      address: WORDLE_CONTRACT_ADDRESS,
+      address: gameAddress,
       abi: abi,
       functionName: 'player1',
     }) as `0x${string}`;
@@ -65,10 +64,10 @@ export async function getPlayer1Address(): Promise<string> {
 /**
  * Get player2 address from the contract
  */
-export async function getPlayer2Address(): Promise<string> {
+export async function getPlayer2Address(gameAddress: `0x${string}`): Promise<string> {
   try {
     const player2 = await readContract(config, {
-      address: WORDLE_CONTRACT_ADDRESS,
+      address: gameAddress,
       abi: abi,
       functionName: 'player2',
     }) as `0x${string}`;
@@ -79,17 +78,90 @@ export async function getPlayer2Address(): Promise<string> {
     throw error;
   }
 }
+
+/**
+ * Get the winner of the game
+ */
+export async function getWinner(gameAddress: `0x${string}`): Promise<string> {
+  try {
+    const winner = await readContract(config, {
+      address: gameAddress,
+      abi: abi,
+      functionName: 'winner',
+    }) as `0x${string}`;
+    
+    return winner;
+  } catch (error) {
+    console.error('Error fetching winner:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the last guess made in the game
+ */
+export async function getLastGuess(gameAddress: `0x${string}`): Promise<string> {
+  try {
+    const lastGuess = await readContract(config, {
+      address: gameAddress,
+      abi: abi,
+      functionName: 'last_guess',
+    }) as string;
+    
+    return lastGuess;
+  } catch (error) {
+    console.error('Error fetching last guess:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the number of guesser attempts
+ */
+export async function getGuesserAttempts(gameAddress: `0x${string}`): Promise<number> {
+  try {
+    const attempts = await readContract(config, {
+      address: gameAddress,
+      abi: abi,
+      functionName: 'guesser_attempts',
+    }) as unknown as bigint;
+    
+    return Number(attempts);
+  } catch (error) {
+    console.error('Error fetching guesser attempts:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the number of verifier attempts
+ */
+export async function getVerifierAttempts(gameAddress: `0x${string}`): Promise<number> {
+  try {
+    const attempts = await readContract(config, {
+      address: gameAddress,
+      abi: abi,
+      functionName: 'verifier_attempts',
+    }) as unknown as bigint;
+    
+    return Number(attempts);
+  } catch (error) {
+    console.error('Error fetching verifier attempts:', error);
+    throw error;
+  }
+}
+
 /**
  * Fetch word commitment hashes from the contract for verification
  * This matches the updated contract logic: the verifier uses their own word commitment hashes
  * When Player 1 makes a guess, Player 2 verifies using Player 2's hashes (word_commitment_hash2)
  * When Player 2 makes a guess, Player 1 verifies using Player 1's hashes (word_commitment_hash1)
  */
-export async function fetchWordCommitmentHashes(currentUserAddress?: string): Promise<WordCommitmentResult> {
+export async function fetchWordCommitmentHashes(gameAddress: `0x${string}`, currentUserAddress?: string): Promise<WordCommitmentResult> {
   try {
     // Get player addresses
-    const player1 = await getPlayer1Address();
-    const player2 = await getPlayer2Address();
+    const player1 = await getPlayer1Address(gameAddress);
+    const player2 = await getPlayer2Address(gameAddress);
     
     // Determine which player the current user is
     let isCurrentUserPlayer1 = false;
@@ -97,7 +169,7 @@ export async function fetchWordCommitmentHashes(currentUserAddress?: string): Pr
       isCurrentUserPlayer1 = currentUserAddress.toLowerCase() === player1.toLowerCase();
     } else {
       // Fallback to using turnToVerify if no currentUserAddress provided
-      const turnToVerify = await getTurnToVerify();
+      const turnToVerify = await getTurnToVerify(gameAddress);
       isCurrentUserPlayer1 = turnToVerify.toLowerCase() === player1.toLowerCase();
     }
     
@@ -112,7 +184,7 @@ export async function fetchWordCommitmentHashes(currentUserAddress?: string): Pr
     
     for (let i = 0; i < 5; i++) {
       const hash = await readContract(config, {
-        address: WORDLE_CONTRACT_ADDRESS,
+        address: gameAddress,
         abi: abi,
         functionName: hashArrayName,
         args: [BigInt(i)],
@@ -124,6 +196,7 @@ export async function fetchWordCommitmentHashes(currentUserAddress?: string): Pr
     const isCurrentUserPlayer2 = currentUserAddress?.toLowerCase() === player2.toLowerCase();
     
     console.log(`🔍 Hash fetch debug:`, {
+      gameAddress,
       currentUserAddress,
       player1,
       player2,

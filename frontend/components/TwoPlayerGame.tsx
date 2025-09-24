@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { abi } from "../abi/abi.ts";
-import { WORDLE_CONTRACT_ADDRESS } from "../constant.ts";
 import { generateProof } from "../utils/generateProof.ts";
 import { GameStatus } from "./GameStatus";
 import { PlayerSection } from "./PlayerSection";
@@ -32,6 +31,20 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
   const { address: currentAccount } = useAccount();
 
+  // Ensure gameContract is provided
+  if (!gameContract) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-xl font-bold text-red-800 mb-2">No Game Contract</h2>
+            <p className="text-red-700">No game contract address provided. Please select a game from the lobby.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // State management
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
   const [hasSecret, setHasSecret] = useState<boolean | null>(null);
@@ -50,7 +63,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
 
   // Use the custom hook for game state management
   const { gameState, player1Board, player2Board } = useGameState({
-    contractAddress: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
+    contractAddress: gameContract as `0x${string}`,
     getPlayerName,
     addLog
   });
@@ -70,12 +83,13 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   
   // Check if current user has the secret for this game
   const checkHasSecret = useCallback(async () => {
+    if (!gameContract) return;
+    
     try {
       const { getStoredSecret } = await import('../utils/contractHelpers');
-      const gameAddress = (gameContract || WORDLE_CONTRACT_ADDRESS) as string;
-      const storedSecret = getStoredSecret(gameAddress);
+      const storedSecret = getStoredSecret(gameContract);
       console.log('🔍 Secret check:', {
-        gameAddress,
+        gameAddress: gameContract,
         hasStoredSecret: !!storedSecret,
         storedSecret: storedSecret ? { word: storedSecret.word } : null
       });
@@ -215,8 +229,13 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       }
       
       // Submit guess with Merkle proof
+      if (!gameContract) {
+        addLog("❌ No game contract address available");
+        return;
+      }
+      
       writeContract({
-        address: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
+        address: gameContract as `0x${string}`,
         abi: abi,
         functionName: 'guess',
         args: [
@@ -236,10 +255,14 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       return;
     }
 
+    if (!gameContract) {
+      addLog("❌ No game contract address available");
+      return;
+    }
+
     // Check if current user has the secret for this game
     const { getStoredSecret } = await import('../utils/contractHelpers');
-    const gameAddress = (gameContract || WORDLE_CONTRACT_ADDRESS) as string;
-    const storedSecret = getStoredSecret(gameAddress);
+    const storedSecret = getStoredSecret(gameContract);
     
     if (!storedSecret) {
       addLog("❌ You can only verify guesses for games where you have the secret word!");
@@ -254,7 +277,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
 
       const { proof, publicInputs } = await generateProof(
         gameState.lastGuess,
-        gameAddress,
+        gameContract,
         currentAccount
       );
       
@@ -266,7 +289,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       addLog(`🔍 Results being submitted: ${results}`);
 
       writeContract({
-        address: (gameContract || WORDLE_CONTRACT_ADDRESS) as `0x${string}`,
+        address: gameContract as `0x${string}`,
         abi: abi,
         functionName: 'verify_guess',
         args: [`0x${uint8ArrayToHex(proof)}`, results],
