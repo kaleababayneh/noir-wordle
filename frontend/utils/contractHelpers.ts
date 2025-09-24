@@ -224,10 +224,14 @@ export async function generateCommitmentHashes(word: string, gameContract?: stri
     throw new Error('Word must be exactly 5 letters');
   }
 
+  console.log(`🔐 Generating commitment hashes for word "${word}" for contract ${gameContract}`);
+
   const { generateSecureSalt, generateWordCommitment } = await import('./generateProof');
   
   try {
     const salt = generateSecureSalt();
+    console.log('🧂 Salt generated:', salt.toString());
+    
     const commitmentHashes: `0x${string}`[] = [];
     const letterCodes: number[] = [];
     
@@ -239,6 +243,7 @@ export async function generateCommitmentHashes(word: string, gameContract?: stri
       
       const commitment = await generateWordCommitment(letterCode, salt);
       commitmentHashes.push(commitment as `0x${string}`);
+      console.log(`📝 Letter ${i}: "${letter}" (${letterCode}) -> ${commitment}`);
     }
     
     // Store the secret word locally for later verification
@@ -246,18 +251,41 @@ export async function generateCommitmentHashes(word: string, gameContract?: stri
       const secretData = {
         word: word.toLowerCase(),
         letterCodes,
-        salt: salt.toString(),
+        salt: salt.toString(), // Store salt as string for JSON serialization
         timestamp: Date.now()
       };
       
-      localStorage.setItem(`wordle_secret_${gameContract}`, JSON.stringify(secretData));
-      console.log(`🔐 Stored secret for game ${gameContract}`);
+      const storageKey = `wordle_secret_${gameContract}`;
+      
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(secretData));
+        console.log(`🔐 Successfully stored secret for game ${gameContract}:`, {
+          word: secretData.word,
+          salt: secretData.salt,
+          letterCodes: secretData.letterCodes,
+          timestamp: secretData.timestamp
+        });
+        
+        // Verify the storage worked
+        const verification = localStorage.getItem(storageKey);
+        if (verification) {
+          const parsed = JSON.parse(verification);
+          console.log('✅ Storage verification successful:', parsed);
+        } else {
+          console.error('❌ Storage verification failed - item not found');
+        }
+      } catch (storageError) {
+        console.error('❌ Failed to store secret in localStorage:', storageError);
+        throw new Error(`Failed to store secret: ${storageError}`);
+      }
+    } else {
+      console.warn('⚠️ No gameContract provided, secret not stored');
     }
     
-    console.log(`Generated commitment hashes for word "${word}":`, commitmentHashes);
+    console.log(`✅ Generated commitment hashes for word "${word}":`, commitmentHashes);
     return commitmentHashes;
   } catch (error) {
-    console.error('Error generating commitment hashes:', error);
+    console.error('❌ Error generating commitment hashes:', error);
     throw error;
   }
 }
@@ -273,15 +301,32 @@ export function getStoredSecret(gameContract: string): {
   salt: string;
   timestamp: number;
 } | null {
+  const storageKey = `wordle_secret_${gameContract}`;
+  console.log(`🔍 Looking for secret with key: ${storageKey}`);
+  
   try {
-    const secretData = localStorage.getItem(`wordle_secret_${gameContract}`);
+    const secretData = localStorage.getItem(storageKey);
     if (!secretData) {
+      console.log(`❌ No secret data found for game ${gameContract}`);
+      
+      // Debug: Show all wordle secrets in localStorage
+      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('wordle_secret_'));
+      console.log('📝 All wordle secrets in localStorage:', allKeys);
+      
       return null;
     }
     
-    return JSON.parse(secretData);
+    const parsed = JSON.parse(secretData);
+    console.log(`✅ Found secret for game ${gameContract}:`, {
+      word: parsed.word,
+      salt: parsed.salt,
+      letterCodesLength: parsed.letterCodes?.length,
+      timestamp: new Date(parsed.timestamp).toLocaleString()
+    });
+    
+    return parsed;
   } catch (error) {
-    console.error('Error retrieving stored secret:', error);
+    console.error(`❌ Error retrieving stored secret for ${gameContract}:`, error);
     return null;
   }
 }

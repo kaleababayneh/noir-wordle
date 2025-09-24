@@ -51,36 +51,60 @@ export function useWordleFactory() {
     eventName: 'GameCreated',
     onLogs(logs) {
       logs.forEach(async (log) => {
-        const { gameContract, creator, gameId } = log.args as { 
-          gameContract: string; 
-          creator: string; 
-          gameId: string;
-        };
-        
-        console.log(`🎮 New game created: ${gameId} by ${creator} at ${gameContract}`);
-        
-        // If this is the current user's game, store the secret
-        if (address && creator.toLowerCase() === address.toLowerCase()) {
-          const pendingSecret = sessionStorage.getItem('pendingSecret');
-          if (pendingSecret) {
-            const { word, gameId: pendingGameId } = JSON.parse(pendingSecret);
-            if (pendingGameId === gameId) {
-              // Store the secret with the game contract address
-              const { generateCommitmentHashes } = await import('../utils/contractHelpers');
-              await generateCommitmentHashes(word, gameContract);
+        try {
+          const { gameContract, creator, gameId } = log.args as { 
+            gameContract: string; 
+            creator: string; 
+            gameId: string;
+          };
+          
+          console.log(`🎮 New game created: ${gameId} by ${creator} at ${gameContract}`);
+          
+          // If this is the current user's game, store the secret
+          if (address && creator.toLowerCase() === address.toLowerCase()) {
+            console.log('🔐 This is current user\'s game, processing secret storage...');
+            
+            const pendingSecret = sessionStorage.getItem('pendingSecret');
+            if (pendingSecret) {
+              console.log('📦 Found pending secret in sessionStorage');
               
-              // Clear the pending secret
-              sessionStorage.removeItem('pendingSecret');
-              console.log(`🔐 Secret stored for game ${gameId} at ${gameContract}`);
+              try {
+                const { word, gameId: pendingGameId } = JSON.parse(pendingSecret);
+                console.log(`🔍 Comparing gameIds - pending: ${pendingGameId}, created: ${gameId}`);
+                
+                if (pendingGameId === gameId) {
+                  console.log('✅ GameId match, storing secret...');
+                  
+                  // Store the secret with the game contract address
+                  const { generateCommitmentHashes } = await import('../utils/contractHelpers');
+                  await generateCommitmentHashes(word, gameContract);
+                  
+                  // Clear the pending secret
+                  sessionStorage.removeItem('pendingSecret');
+                  console.log(`🔐 Secret successfully stored and pending secret cleared for game ${gameId} at ${gameContract}`);
+                } else {
+                  console.log(`⚠️ GameId mismatch - not storing secret for this game`);
+                }
+              } catch (parseError) {
+                console.error('❌ Error parsing pending secret:', parseError);
+              }
+            } else {
+              console.log('❌ No pending secret found in sessionStorage');
+              
+              // Debug: show all session storage items
+              const sessionItems = Object.keys(sessionStorage);
+              console.log('📝 All sessionStorage keys:', sessionItems);
             }
           }
-        }
-        
-        // Refetch data
-        refetchTotalGames();
-        refetchActiveGames();
-        if (address && creator.toLowerCase() === address.toLowerCase()) {
-          refetchPlayerGames();
+          
+          // Refetch data
+          refetchTotalGames();
+          refetchActiveGames();
+          if (address && creator.toLowerCase() === address.toLowerCase()) {
+            refetchPlayerGames();
+          }
+        } catch (eventError) {
+          console.error('❌ Error processing GameCreated event:', eventError);
         }
       });
     },

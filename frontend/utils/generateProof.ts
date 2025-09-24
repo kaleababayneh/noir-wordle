@@ -19,8 +19,11 @@ import { abi } from '../abi/abi';
 
 export function generateSecureSalt(): Fr {
   // For now using salt 0 as specified, but can be made secure later
+  // TODO: In production, generate a proper random salt
   console.log('Using salt Fr(0) as specified');
-  return new Fr(0n);
+  const salt = new Fr(0n);
+  console.log('🧂 Generated salt:', salt.toString());
+  return salt;
 }
 
 /**

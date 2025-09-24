@@ -148,8 +148,13 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
     }
 
     try {
+      console.log(`🎯 Joining game ${game.gameId} at ${game.gameContract} with word "${word}"`);
+      
       const commitmentHashes = await generateCommitmentHashes(word.toLowerCase(), game.gameContract);
+      console.log('🔐 Commitment hashes generated and secret stored');
+      
       await joinGameByContract(game.gameContract as `0x${string}`, commitmentHashes);
+      console.log('✅ Successfully joined game contract');
       
       // Reset form and navigate to game
       setWord('');
@@ -159,7 +164,7 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       
       alert('Joined game successfully! 🎉');
     } catch (error: any) {
-      console.error('Error joining game:', error);
+      console.error('❌ Error joining game:', error);
       
       // Handle specific error messages
       if (error?.message?.includes('Player 1 already joined')) {

@@ -83,19 +83,30 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   
   // Check if current user has the secret for this game
   const checkHasSecret = useCallback(async () => {
-    if (!gameContract) return;
+    if (!gameContract) {
+      console.log('🔍 No game contract provided for secret check');
+      return;
+    }
     
     try {
+      console.log(`🔍 Checking for secret for game: ${gameContract}`);
       const { getStoredSecret } = await import('../utils/contractHelpers');
       const storedSecret = getStoredSecret(gameContract);
-      console.log('🔍 Secret check:', {
+      
+      console.log('🔍 Secret check result:', {
         gameAddress: gameContract,
         hasStoredSecret: !!storedSecret,
-        storedSecret: storedSecret ? { word: storedSecret.word } : null
+        storedSecret: storedSecret ? { 
+          word: storedSecret.word, 
+          salt: storedSecret.salt,
+          letterCodesCount: storedSecret.letterCodes?.length,
+          timestamp: new Date(storedSecret.timestamp).toLocaleString()
+        } : null
       });
+      
       setHasSecret(!!storedSecret);
     } catch (error) {
-      console.error('Error checking secret:', error);
+      console.error('❌ Error checking secret:', error);
       setHasSecret(false);
     }
   }, [gameContract]);
