@@ -32,6 +32,10 @@ COPY package.json package-lock.json ./
 # Install all dependencies (including dev deps needed for vite preview)
 RUN npm ci --legacy-peer-deps
 
+# Copy vite config (needed for preview server configuration)
+COPY vite.config.ts postcss.config.ts tailwind.config.js ./
+COPY tsconfig.json tsconfig.node.json tsconfig.app.json ./
+
 # Copy built assets from builder stage
 COPY --from=builder /app/dist ./dist
 
