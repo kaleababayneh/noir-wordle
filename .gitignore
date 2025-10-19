@@ -5,6 +5,8 @@ yarn-debug.log*
 yarn-error.log*
 yarn.lock
 target/
+# But allow circuits/target (needed for frontend build)
+!circuits/target/
 build/
 vendor/
 lib/
