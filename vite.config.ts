@@ -1,16 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path';
+import { resolve } from 'path'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'esnext',  // Set the target to 'esnext' for top-level await support
+    target: 'esnext',
   },
   optimizeDeps: {
-    esbuildOptions: { target: "esnext" },
-    exclude: ['@noir-lang/noirc_abi', '@noir-lang/acvm_js']
+    esbuildOptions: { target: 'esnext' },
+    exclude: ['@noir-lang/noirc_abi', '@noir-lang/acvm_js'],
   },
   resolve: {
     alias: {
@@ -18,18 +17,19 @@ export default defineConfig({
     },
   },
   css: {
-    postcss: './postcss.config.js', // Path to your PostCSS config file
+    postcss: './postcss.config.js',
   },
   server: {
     host: '0.0.0.0',
-    // Allow all hosts for development
-    hmr: {
-      clientPort: 443
-    }
+    hmr: { clientPort: 443 },
   },
   preview: {
-    host: true, // Listen on all addresses including LAN and public
+    host: true,
     port: process.env.PORT ? parseInt(process.env.PORT) : 5173,
-    strictPort: false
-  }
-});
+    strictPort: false,
+    // 👇 Allow your production/preview hostnames
+    allowedHosts: ['zkwordle.app', '.zkwordle.app', 'www.zkwordle.app'],
+    // If you preview over HTTPS with a valid cert, host checks are skipped,
+    // but keeping the allowlist is safer and explicit.
+  },
+})
