@@ -22,6 +22,8 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     hmr: { clientPort: 443 },
+    // ✅ Allow production domains (required for Host header check)
+    allowedHosts: ['zkwordle.app', '.zkwordle.app', 'www.zkwordle.app'],
   },
   preview: {
     host: true,
