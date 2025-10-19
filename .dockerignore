@@ -1,13 +1,9 @@
 # Dependencies
 node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Build outputs
+# Build outputs (will be regenerated)
 dist
 build
-.next
 out
 
 # Development
@@ -21,41 +17,22 @@ coverage
 .nyc_output
 test-results
 
-# Environment
+# Environment files with secrets
 .env.local
 .env.*.local
 
-# Logs
-logs
-*.log
-
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
 # Git
 .git
-.gitignore
-.gitattributes
 
-# Documentation
-README.md
-*.md
-
-# CI/CD
-.github
-.gitlab-ci.yml
-
-# Noir/Solidity (not needed in frontend container)
-# Keep circuits/target/circuits.json as it's needed for proof generation
-circuits/src
+# Contracts (not needed for frontend build)
 contracts/lib
 contracts/cache
 contracts/broadcast
-*.proof
 
 # Cache
-.cache
-.parcel-cache
 .npm
 .turbo
