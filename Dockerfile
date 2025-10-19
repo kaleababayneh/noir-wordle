@@ -3,6 +3,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies for native modules (bufferutil, utf-8-validate, etc.)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package.json package-lock.json ./
 
@@ -19,6 +22,9 @@ RUN npm run build
 FROM node:18-alpine
 
 WORKDIR /app
+
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
 
 # Copy package files for production dependencies
 COPY package.json package-lock.json ./
