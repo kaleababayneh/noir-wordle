@@ -66,13 +66,6 @@ export async function calculateWordleResults(guessLetters: string[], correctLett
 /**
  * Get the correct letters for a specific player based on hash array name
  */
-export function getCorrectLettersForPlayer(hashArrayName: string, hardcodedValues: any): string[] {
-
-  return hashArrayName === 'word_commitment_hash2' 
-    ? hardcodedValues.player2CorrectLetters 
-    : hardcodedValues.player1CorrectLetters;
-}
-
 
 export function getPlayerNameFromHashArray(hashArrayName: string): string {
   return hashArrayName === 'word_commitment_hash2' ? 'Player 2 ' : 'Player 1 ';

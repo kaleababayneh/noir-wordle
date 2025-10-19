@@ -24,13 +24,11 @@ export {
   hexLettersToAsciiNumbers,
   hexLettersToChars,
   calculateWordleResults,
-  getCorrectLettersForPlayer,
   getPlayerNameFromHashArray
 } from './gameLogic';
 
 // Constants
 export {
-  HARDCODED_VALUES,
   WORD_LENGTH,
   WORDLE_RESULTS
 } from './constants';
