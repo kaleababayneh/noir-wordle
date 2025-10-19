@@ -143,6 +143,7 @@ export function useWordleFactory() {
       abi: factoryAbi,
       functionName: 'createGame',
       args: [gameId, wordCommitmentHashes],
+      gas: 5000000n, // Set reasonable gas limit (5M)
     });
   };
   
@@ -154,6 +155,7 @@ export function useWordleFactory() {
       abi: factoryAbi,
       functionName: 'joinGameById',
       args: [gameId, wordCommitmentHashes],
+      gas: 3000000n, // Set reasonable gas limit (3M)
     });
   };
   
@@ -165,6 +167,7 @@ export function useWordleFactory() {
       abi: factoryAbi,
       functionName: 'joinGameByContract',
       args: [gameContract, wordCommitmentHashes],
+      gas: 3000000n, // Set reasonable gas limit (3M)
     });
   };
   

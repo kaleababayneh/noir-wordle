@@ -258,6 +258,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           merkleProof.pathElements as `0x${string}`[],
           merkleProof.pathIndices
         ],
+        gas: 5000000n, // Set reasonable gas limit (5M, well under 16.7M cap)
       });
     } catch (error) {
       addLog(`❌ Error making guess: ${error}`);
@@ -308,6 +309,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
         abi: abi,
         functionName: 'verify_guess',
         args: [`0x${uint8ArrayToHex(proof)}`, results],
+        gas: 10000000n, // Higher gas limit for ZK proof verification (10M, under 16.7M cap)
       });
 
     } catch (error) {
