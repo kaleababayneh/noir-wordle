@@ -47,11 +47,11 @@ README.md
 .gitlab-ci.yml
 
 # Noir/Solidity (not needed in frontend container)
-circuits
+# Keep circuits/target/circuits.json as it's needed for proof generation
+circuits/src
 contracts/lib
 contracts/cache
 contracts/broadcast
-target
 *.proof
 
 # Cache
