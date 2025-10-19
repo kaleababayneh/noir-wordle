@@ -1,0 +1,13 @@
+{
+  "name": "noir-wordle-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd .. && vite",
+    "build": "cd .. && tsc -b && vite build",
+    "lint": "cd .. && eslint .",
+    "preview": "cd .. && vite preview --host 0.0.0.0",
+    "start": "npm run preview"
+  }
+}

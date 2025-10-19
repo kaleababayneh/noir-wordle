@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = ["cd .. && npm install"]
+
+[phases.build]
+cmds = ["cd .. && npm run build"]
+
+[start]
+cmd = "cd .. && npm run preview -- --port $PORT"
