@@ -90,8 +90,37 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     
     const checkSecret = async () => {
       try {
-        const { getStoredSecret } = await import('../utils/contractHelpers');
-        const storedSecret = getStoredSecret(gameContract);
+        const { getStoredSecret, generateCommitmentHashes } = await import('../utils/contractHelpers');
+        let storedSecret = getStoredSecret(gameContract);
+        
+        // FALLBACK: If no secret found, check for pendingSecret from game creation
+        if (!storedSecret) {
+          const pendingSecret = sessionStorage.getItem('pendingSecret');
+          if (pendingSecret) {
+            try {
+              const { word, gameId } = JSON.parse(pendingSecret);
+              console.log('🔄 Found pendingSecret, storing it now for game:', {
+                word,
+                gameId,
+                gameContract
+              });
+              
+              // Store the secret with the game contract address
+              await generateCommitmentHashes(word, gameContract);
+              
+              // Verify it was stored
+              storedSecret = getStoredSecret(gameContract);
+              
+              if (storedSecret) {
+                console.log('✅ Successfully stored pending secret for game');
+                // Clear the pending secret
+                sessionStorage.removeItem('pendingSecret');
+              }
+            } catch (parseError) {
+              console.error('❌ Error processing pending secret:', parseError);
+            }
+          }
+        }
         
         console.log('🔍 Secret check for game:', {
           gameAddress: gameContract,

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  zk-wordle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - PORT=5173
+      - NODE_ENV=production
+    restart: unless-stopped
+    # Uncomment to use environment file
+    # env_file:
+    #   - .env.production
+    
+    # Health check to ensure the app is running
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Optional: Add nginx reverse proxy for SSL
+# Uncomment if you want to test with nginx locally
+#
+# nginx:
+#   image: nginx:alpine
+#   ports:
+#     - "80:80"
+#     - "443:443"
+#   volumes:
+#     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#     - ./ssl:/etc/nginx/ssl:ro  # Your SSL certificates
+#   depends_on:
+#     - zk-wordle
+#   restart: unless-stopped
