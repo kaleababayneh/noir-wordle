@@ -21,13 +21,15 @@ export default defineConfig({
     postcss: './postcss.config.js', // Path to your PostCSS config file
   },
   server: {
+    host: '0.0.0.0',
     // Allow all hosts for development
-    allowedHosts: true
+    hmr: {
+      clientPort: 443
+    }
   },
   preview: {
-    host: '0.0.0.0',
+    host: true, // Listen on all addresses including LAN and public
     port: process.env.PORT ? parseInt(process.env.PORT) : 5173,
-    // Allow all hosts for production deployment behind reverse proxy
-    allowedHosts: true
+    strictPort: false
   }
 });
