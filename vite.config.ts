@@ -21,11 +21,21 @@ export default defineConfig({
     postcss: './postcss.config.js', // Path to your PostCSS config file
   },
   server: {
-    allowedHosts: ["super-ghost-intimate.ngrok-free.app"]
+    allowedHosts: [
+      "super-ghost-intimate.ngrok-free.app",
+      "zkwordle.app",
+      "www.zkwordle.app",
+      ".zkwordle.app"
+    ]
   },
   preview: {
     host: '0.0.0.0',
     port: process.env.PORT ? parseInt(process.env.PORT) : 5173,
-    allowedHosts: ["super-ghost-intimate.ngrok-free.app"]
+    allowedHosts: [
+      "super-ghost-intimate.ngrok-free.app",
+      "zkwordle.app",
+      "www.zkwordle.app",
+      ".zkwordle.app" // Allow all subdomains
+    ]
   }
 });
