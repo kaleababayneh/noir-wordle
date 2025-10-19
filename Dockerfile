@@ -29,8 +29,8 @@ RUN apk add --no-cache python3 make g++
 # Copy package files for production dependencies
 COPY package.json package-lock.json ./
 
-# Install only production dependencies
-RUN npm ci --legacy-peer-deps --omit=dev
+# Install all dependencies (including dev deps needed for vite preview)
+RUN npm ci --legacy-peer-deps
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist ./dist
