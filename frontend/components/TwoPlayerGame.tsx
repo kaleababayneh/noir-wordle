@@ -81,42 +81,34 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const isCurrentUserPlayer1 = currentAccount?.toLowerCase() === gameState.player1?.toLowerCase();
   const isCurrentUserPlayer2 = currentAccount?.toLowerCase() === gameState.player2?.toLowerCase();
   
-  // Check if current user has the secret for this game
-  const checkHasSecret = useCallback(async () => {
+  // Simplified secret check - runs once and whenever game contract changes
+  useEffect(() => {
     if (!gameContract) {
-      console.log('🔍 No game contract provided for secret check');
       setHasSecret(false);
       return;
     }
     
-    try {
-      console.log(`🔍 Checking for secret for game: ${gameContract}`);
-      const { getStoredSecret } = await import('../utils/contractHelpers');
-      const storedSecret = getStoredSecret(gameContract);
-      
-      console.log('🔍 Secret check result:', {
-        gameAddress: gameContract,
-        hasStoredSecret: !!storedSecret,
-        storedSecret: storedSecret ? { 
-          word: storedSecret.word, 
-          salt: storedSecret.salt,
-          letterCodesCount: storedSecret.letterCodes?.length,
-          timestamp: new Date(storedSecret.timestamp).toLocaleString()
-        } : null,
-        currentAccount: currentAccount
-      });
-      
-      setHasSecret(!!storedSecret);
-    } catch (error) {
-      console.error('❌ Error checking secret:', error);
-      setHasSecret(false);
-    }
+    const checkSecret = async () => {
+      try {
+        const { getStoredSecret } = await import('../utils/contractHelpers');
+        const storedSecret = getStoredSecret(gameContract);
+        
+        console.log('🔍 Secret check for game:', {
+          gameAddress: gameContract,
+          hasSecret: !!storedSecret,
+          secretWord: storedSecret?.word,
+          currentUser: currentAccount
+        });
+        
+        setHasSecret(!!storedSecret);
+      } catch (error) {
+        console.error('❌ Error checking secret:', error);
+        setHasSecret(false);
+      }
+    };
+    
+    checkSecret();
   }, [gameContract, currentAccount]);
-  
-  // Check for secret on component mount and whenever game state changes
-  useEffect(() => {
-    checkHasSecret();
-  }, [checkHasSecret, gameState.player1, gameState.player2, gameState.turnToVerify]);
 
   // Create separate boards based on user's perspective
   const createUserBoard = (contractBoard: any[], playerKey: 'player1' | 'player2', isOwnBoard: boolean) => {
@@ -268,13 +260,33 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   };
 
   const handleVerify = async () => {
-    if (!gameState.lastGuess) {
-      addLog("❌ No guess to verify");
+    if (!gameContract) {
+      addLog("❌ No game contract address available");
       return;
     }
 
-    if (!gameContract) {
-      addLog("❌ No game contract address available");
+    // Determine which player's unverified guess we need to verify
+    // Player 1 verifies Player 2's guesses, Player 2 verifies Player 1's guesses
+    let guessToVerify: string | undefined;
+    
+    if (isCurrentUserPlayer1) {
+      // Player 1 verifies Player 2's unverified guesses
+      const unverifiedGuess = player2Board.find(g => !g.isVerified);
+      guessToVerify = unverifiedGuess?.word;
+    } else if (isCurrentUserPlayer2) {
+      // Player 2 verifies Player 1's unverified guesses
+      const unverifiedGuess = player1Board.find(g => !g.isVerified);
+      guessToVerify = unverifiedGuess?.word;
+    }
+
+    if (!guessToVerify) {
+      addLog("❌ No unverified guess found to verify");
+      console.log('⚠️ No guess to verify:', { 
+        isCurrentUserPlayer1, 
+        isCurrentUserPlayer2, 
+        player1Board: player1Board.map(g => ({ word: g.word, verified: g.isVerified })),
+        player2Board: player2Board.map(g => ({ word: g.word, verified: g.isVerified }))
+      });
       return;
     }
 
@@ -291,10 +303,10 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     try {
       setIsGeneratingProof(true);
       addLog("🔐 Generating ZK proof for verification...");
-      addLog(`🔍 Verifying guess "${gameState.lastGuess}" against your secret word "${storedSecret.word}"`);
+      addLog(`🔍 Verifying guess "${guessToVerify}" against your secret word "${storedSecret.word}"`);
 
       const { proof, publicInputs } = await generateProof(
-        gameState.lastGuess,
+        guessToVerify,
         gameContract,
         currentAccount
       );
@@ -321,39 +333,101 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     }
   };
 
-  // Game status helpers
+  // Game status - simplified
+  const gameStarted = !!(gameState.player1 && gameState.player2 && 
+                      gameState.player1 !== "0x0000000000000000000000000000000000000000" && 
+                      gameState.player2 !== "0x0000000000000000000000000000000000000000");
+  const gameEnded = !!(gameState.winner && gameState.winner !== "0x0000000000000000000000000000000000000000");
+  
+  // Determine turn states
   const isPlayer1Turn = gameState.currentTurn.toLowerCase() === gameState.player1?.toLowerCase();
   const isPlayer2Turn = gameState.currentTurn.toLowerCase() === gameState.player2?.toLowerCase();
   const shouldPlayer1Verify = gameState.turnToVerify.toLowerCase() === gameState.player1?.toLowerCase();
   const shouldPlayer2Verify = gameState.turnToVerify.toLowerCase() === gameState.player2?.toLowerCase();
-  const gameStarted = gameState.player1 !== "" && gameState.player2 !== "" && 
-                      gameState.player1 !== "0x0000000000000000000000000000000000000000" && 
-                      gameState.player2 !== "0x0000000000000000000000000000000000000000";
-  const gameEnded = gameState.winner !== "" && gameState.winner !== "0x0000000000000000000000000000000000000000";
   
-  // Check if there are unverified guesses on the opponent's board
-  // Player 1 verifies Player 2's guesses, Player 2 verifies Player 1's guesses
-  const player2HasUnverifiedGuess = player2Board.some(guess => !guess.isVerified);
-  const player1HasUnverifiedGuess = player1Board.some(guess => !guess.isVerified);
+  // Check for unverified guesses - Player 1 verifies Player 2's guesses and vice versa
+  const player1HasUnverifiedGuess = player1Board.some(g => !g.isVerified);
+  const player2HasUnverifiedGuess = player2Board.some(g => !g.isVerified);
   
-  // Can verify if: it's your turn to verify AND opponent has unverified guesses AND you have the secret
-  const canPlayer1Verify = shouldPlayer1Verify && player2HasUnverifiedGuess && hasSecret === true;
-  const canPlayer2Verify = shouldPlayer2Verify && player1HasUnverifiedGuess && hasSecret === true;
+  // Verify button logic: SIMPLIFIED
+  // Show verify button if:
+  // 1. It's your turn to verify (shouldPlayerXVerify)
+  // 2. You ARE this player (isCurrentUserPlayerX)
+  // 3. You HAVE the secret (hasSecret === true)
+  // 4. Opponent HAS unverified guess (playerYHasUnverifiedGuess)
+  const showVerifyForPlayer1 = shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true && player2HasUnverifiedGuess;
+  const showVerifyForPlayer2 = shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true && player1HasUnverifiedGuess;
 
-  console.log('🔍 Verification debug:', {
-    hasSecret,
-    shouldPlayer1Verify,
-    shouldPlayer2Verify,
+  console.log('🔍 Verification State:', {
+    // Game state (RAW addresses for comparison)
+    gameContractAddress: gameContract,
+    player1Raw: gameState.player1,
+    player2Raw: gameState.player2,
+    turnToVerifyRaw: gameState.turnToVerify,
+    currentUserRaw: currentAccount,
+    
+    // Lowercased comparisons
+    player1Lower: gameState.player1?.toLowerCase(),
+    player2Lower: gameState.player2?.toLowerCase(),
+    turnToVerifyLower: gameState.turnToVerify?.toLowerCase(),
+    currentUserLower: currentAccount?.toLowerCase(),
+    
+    // Role checks
     isCurrentUserPlayer1,
     isCurrentUserPlayer2,
+    shouldPlayer1Verify,
+    shouldPlayer2Verify,
+    
+    // Detailed turn state
+    turnToVerifyEqualsPlayer1: gameState.turnToVerify?.toLowerCase() === gameState.player1?.toLowerCase(),
+    turnToVerifyEqualsPlayer2: gameState.turnToVerify?.toLowerCase() === gameState.player2?.toLowerCase(),
+    currentUserEqualsPlayer1: currentAccount?.toLowerCase() === gameState.player1?.toLowerCase(),
+    currentUserEqualsPlayer2: currentAccount?.toLowerCase() === gameState.player2?.toLowerCase(),
+    
+    // Board state  
+    player1BoardCount: player1Board.length,
+    player2BoardCount: player2Board.length,
     player1HasUnverifiedGuess,
     player2HasUnverifiedGuess,
-    canPlayer1Verify,
-    canPlayer2Verify,
-    player1ShowsVerify: shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true && player2HasUnverifiedGuess,
-    player2ShowsVerify: shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true && player1HasUnverifiedGuess,
-    player1Board: player1Board.map(g => ({ word: g.word, verified: g.isVerified })),
-    player2Board: player2Board.map(g => ({ word: g.word, verified: g.isVerified }))
+    player1AllGuesses: player1Board.map(g => ({ word: g.word, verified: g.isVerified })),
+    player2AllGuesses: player2Board.map(g => ({ word: g.word, verified: g.isVerified })),
+    player1UnverifiedGuesses: player1Board.filter(g => !g.isVerified).map(g => g.word),
+    player2UnverifiedGuesses: player2Board.filter(g => !g.isVerified).map(g => g.word),
+    
+    // Secret state - CRITICAL FOR DEBUGGING
+    hasSecret,
+    hasSecretType: typeof hasSecret,
+    secretCheckResult: `Secret ${hasSecret ? 'FOUND' : 'NOT FOUND'} for game ${gameContract}`,
+    
+    // Final result breakdown
+    showVerifyForPlayer1,
+    showVerifyForPlayer1_breakdown: {
+      shouldPlayer1Verify,
+      isCurrentUserPlayer1,
+      hasSecret,
+      player2HasUnverifiedGuess,
+      reason: !showVerifyForPlayer1 ? (
+        !shouldPlayer1Verify ? 'Not your turn to verify' :
+        !isCurrentUserPlayer1 ? 'You are not Player 1' :
+        !hasSecret ? '❌ NO SECRET FOUND FOR THIS GAME - Did you create/join this game with your current wallet?' :
+        !player2HasUnverifiedGuess ? 'Player 2 has no unverified guesses' :
+        'Unknown reason'
+      ) : 'All conditions met!'
+    },
+    showVerifyForPlayer2,
+    showVerifyForPlayer2_breakdown: {
+      shouldPlayer2Verify,
+      isCurrentUserPlayer2,
+      hasSecret,
+      player1HasUnverifiedGuess,
+      reason: !showVerifyForPlayer2 ? (
+        !shouldPlayer2Verify ? 'Not your turn to verify' :
+        !isCurrentUserPlayer2 ? 'You are not Player 2' :
+        !hasSecret ? '❌ NO SECRET FOUND FOR THIS GAME - Did you create/join this game with your current wallet?' :
+        !player1HasUnverifiedGuess ? 'Player 1 has no unverified guesses' :
+        'Unknown reason'
+      ) : 'All conditions met!'
+    }
   });
 
 
@@ -366,6 +440,34 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           <h1 className="text-4xl font-bold text-gray-800 mb-2">🎯 P2P ZK Wordle</h1>
           <p className="text-lg text-gray-600">Turn-based word guessing with Zero-Knowledge proofs</p>
         </div>
+
+        {/* Warning: Missing Secret */}
+        {gameStarted && !hasSecret && (isCurrentUserPlayer1 || isCurrentUserPlayer2) && (
+          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  ⚠️ No Secret Word Found for This Game
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>You cannot verify guesses because you don't have the secret word stored for this game.</p>
+                  <p className="mt-1"><strong>This happens when:</strong></p>
+                  <ul className="list-disc list-inside mt-1">
+                    <li>You switched to a different game</li>
+                    <li>You're viewing a game you didn't create or join</li>
+                    <li>Your browser cleared localStorage</li>
+                  </ul>
+                  <p className="mt-2 font-medium">Game Address: <code className="text-xs bg-yellow-100 px-1 py-0.5 rounded">{gameContract}</code></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Game Status */}
         <GameStatus
@@ -385,7 +487,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerNumber={1}
             playerName="Player 1"  
             isPlayerTurn={isPlayer1Turn && isCurrentUserPlayer1}
-            canVerify={canPlayer1Verify}
+            canVerify={showVerifyForPlayer1}
             shouldVerify={shouldPlayer1Verify}
             hasPendingGuess={player2HasUnverifiedGuess}
             lastGuess={gameState.lastGuess}
@@ -404,7 +506,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             playerNumber={2}
             playerName="Player 2"
             isPlayerTurn={isPlayer2Turn && isCurrentUserPlayer2}
-            canVerify={canPlayer2Verify}
+            canVerify={showVerifyForPlayer2}
             shouldVerify={shouldPlayer2Verify}
             hasPendingGuess={player1HasUnverifiedGuess}
             lastGuess={gameState.lastGuess}
