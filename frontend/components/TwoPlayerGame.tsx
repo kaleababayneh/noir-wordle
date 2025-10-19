@@ -85,6 +85,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
   const checkHasSecret = useCallback(async () => {
     if (!gameContract) {
       console.log('🔍 No game contract provided for secret check');
+      setHasSecret(false);
       return;
     }
     
@@ -101,7 +102,8 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           salt: storedSecret.salt,
           letterCodesCount: storedSecret.letterCodes?.length,
           timestamp: new Date(storedSecret.timestamp).toLocaleString()
-        } : null
+        } : null,
+        currentAccount: currentAccount
       });
       
       setHasSecret(!!storedSecret);
@@ -109,12 +111,12 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
       console.error('❌ Error checking secret:', error);
       setHasSecret(false);
     }
-  }, [gameContract]);
+  }, [gameContract, currentAccount]);
   
-  // Check for secret on component mount
+  // Check for secret on component mount and whenever game state changes
   useEffect(() => {
     checkHasSecret();
-  }, [checkHasSecret]);
+  }, [checkHasSecret, gameState.player1, gameState.player2, gameState.turnToVerify]);
 
   // Create separate boards based on user's perspective
   const createUserBoard = (contractBoard: any[], playerKey: 'player1' | 'player2', isOwnBoard: boolean) => {
@@ -329,10 +331,14 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
                       gameState.player2 !== "0x0000000000000000000000000000000000000000";
   const gameEnded = gameState.winner !== "" && gameState.winner !== "0x0000000000000000000000000000000000000000";
   
-  // Check if there's a pending guess to verify
-  const hasPendingGuess = gameState.guesserAttempts - gameState.verifierAttempts === 1;
-  const canPlayer1Verify = shouldPlayer1Verify && hasPendingGuess;
-  const canPlayer2Verify = shouldPlayer2Verify && hasPendingGuess;
+  // Check if there are unverified guesses on the opponent's board
+  // Player 1 verifies Player 2's guesses, Player 2 verifies Player 1's guesses
+  const player2HasUnverifiedGuess = player2Board.some(guess => !guess.isVerified);
+  const player1HasUnverifiedGuess = player1Board.some(guess => !guess.isVerified);
+  
+  // Can verify if: it's your turn to verify AND opponent has unverified guesses AND you have the secret
+  const canPlayer1Verify = shouldPlayer1Verify && player2HasUnverifiedGuess && hasSecret === true;
+  const canPlayer2Verify = shouldPlayer2Verify && player1HasUnverifiedGuess && hasSecret === true;
 
   console.log('🔍 Verification debug:', {
     hasSecret,
@@ -340,11 +346,14 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
     shouldPlayer2Verify,
     isCurrentUserPlayer1,
     isCurrentUserPlayer2,
-    hasPendingGuess,
+    player1HasUnverifiedGuess,
+    player2HasUnverifiedGuess,
     canPlayer1Verify,
     canPlayer2Verify,
-    player1ShowsVerify: shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true,
-    player2ShowsVerify: shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true
+    player1ShowsVerify: shouldPlayer1Verify && isCurrentUserPlayer1 && hasSecret === true && player2HasUnverifiedGuess,
+    player2ShowsVerify: shouldPlayer2Verify && isCurrentUserPlayer2 && hasSecret === true && player1HasUnverifiedGuess,
+    player1Board: player1Board.map(g => ({ word: g.word, verified: g.isVerified })),
+    player2Board: player2Board.map(g => ({ word: g.word, verified: g.isVerified }))
   });
 
 
@@ -378,7 +387,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             isPlayerTurn={isPlayer1Turn && isCurrentUserPlayer1}
             canVerify={canPlayer1Verify}
             shouldVerify={shouldPlayer1Verify}
-            hasPendingGuess={hasPendingGuess}
+            hasPendingGuess={player2HasUnverifiedGuess}
             lastGuess={gameState.lastGuess}
             isPending={isPending}
             isConfirming={isConfirming}
@@ -397,7 +406,7 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
             isPlayerTurn={isPlayer2Turn && isCurrentUserPlayer2}
             canVerify={canPlayer2Verify}
             shouldVerify={shouldPlayer2Verify}
-            hasPendingGuess={hasPendingGuess}
+            hasPendingGuess={player1HasUnverifiedGuess}
             lastGuess={gameState.lastGuess}
             isPending={isPending}
             isConfirming={isConfirming}
