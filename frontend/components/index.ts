@@ -6,3 +6,4 @@ export { default as ConnectWallet } from './ConnectWallet';
 export { GameStatus } from './GameStatus';
 export { PlayerSection } from './PlayerSection';
 export { WordleGrid } from './WordleGrid';
+export { NetworkChecker } from './NetworkChecker';

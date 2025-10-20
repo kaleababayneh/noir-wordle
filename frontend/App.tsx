@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TwoPlayerGame from "./components/TwoPlayerGame.tsx";
 import { GameLobby } from "./components/GameLobby.tsx";
 import ConnectWallet from "./components/ConnectWallet.tsx";
+import { NetworkChecker } from "./components/NetworkChecker.tsx";
 
 import "./App.css";
 
@@ -28,6 +29,9 @@ function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <div className="min-h-screen bg-gray-50">
+          {/* Auto-switch to Base Sepolia if on wrong network */}
+          <NetworkChecker />
+          
           <header className="bg-white shadow-sm border-b">
             <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
               <h1 
