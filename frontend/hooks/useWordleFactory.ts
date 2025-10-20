@@ -81,24 +81,26 @@ export function useWordleFactory() {
               console.log('📦 Found pending secret in sessionStorage');
               
               try {
-                const { word, gameId: pendingGameId } = JSON.parse(pendingSecret);
+                const { word, gameId: pendingGameId, salt } = JSON.parse(pendingSecret);
                 console.log(`🔍 Comparing gameIds:`, {
                   pendingGameId,
                   createdGameId: gameId,
-                  match: pendingGameId === gameId
+                  match: pendingGameId === gameId,
+                  hasSalt: !!salt
                 });
                 
                 if (pendingGameId === gameId) {
                   console.log('✅ GameId match, storing secret for contract:', gameContract);
                   
-                  // Store the secret with the game contract address
+                  // Store the secret with the game contract address using the stored salt
                   const { generateCommitmentHashes } = await import('../utils/contractHelpers');
-                  const hashes = await generateCommitmentHashes(word, gameContract);
+                  const hashes = await generateCommitmentHashes(word, gameContract, salt);
                   
                   console.log('✅ generateCommitmentHashes completed:', {
                     word,
                     gameContract,
-                    hashesReturned: hashes?.length || 0
+                    salt,
+                    hashesReturned: hashes?.hashes?.length || 0
                   });
                   
                   // Clear the pending secret

@@ -98,15 +98,16 @@ export default function TwoPlayerGame({ gameContract }: TwoPlayerGameProps = {})
           const pendingSecret = sessionStorage.getItem('pendingSecret');
           if (pendingSecret) {
             try {
-              const { word, gameId } = JSON.parse(pendingSecret);
+              const { word, gameId, salt } = JSON.parse(pendingSecret);
               console.log('🔄 Found pendingSecret, storing it now for game:', {
                 word,
                 gameId,
+                hasSalt: !!salt,
                 gameContract
               });
               
-              // Store the secret with the game contract address
-              await generateCommitmentHashes(word, gameContract);
+              // Store the secret with the game contract address using the SAME salt
+              await generateCommitmentHashes(word, gameContract, salt);
               
               // Verify it was stored
               storedSecret = getStoredSecret(gameContract);

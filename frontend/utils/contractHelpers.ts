@@ -214,23 +214,69 @@ export async function fetchWordCommitmentHashes(gameAddress: `0x${string}`, curr
 }
 
 /**
+ * Generate a cryptographically secure random salt
+ * Uses Fr.random() which is already cryptographically secure
+ */
+export async function generateRandomSalt(): Promise<string> {
+  const { Fr } = await import('@aztec/bb.js');
+  
+  // Fr.random() already uses cryptographically secure randomness
+  // and ensures the value is within the field modulus
+  const salt = Fr.random();
+  const saltString = salt.toString();
+  
+  console.log('🎲 Generated cryptographically secure random salt');
+  return saltString;
+}
+
+/**
  * Generate commitment hashes for a word (for game creation)
  * @param word - 5-letter word to generate commitments for
  * @param gameContract - game contract address to store the secret for
  * @returns Array of commitment hashes
  */
-export async function generateCommitmentHashes(word: string, gameContract?: string): Promise<`0x${string}`[]> {
+/**
+ * Generate commitment hashes for a word
+ * @param word - 5 letter word
+ * @param gameContract - Game contract address (optional for pre-creation)
+ * @param preSalt - Pre-generated random salt string (required if no gameContract)
+ * @returns Object with commitment hashes and salt (for pre-creation)
+ */
+export async function generateCommitmentHashes(
+  word: string, 
+  gameContract?: string,
+  preSalt?: string
+): Promise<{ hashes: `0x${string}`[], salt: string }> {
   if (word.length !== 5) {
     throw new Error('Word must be exactly 5 letters');
   }
 
   console.log(`🔐 Generating commitment hashes for word "${word}" for contract ${gameContract}`);
 
-  const { generateSecureSalt, generateWordCommitment } = await import('./generateProof');
+  const { generateWordCommitment } = await import('./generateProof');
+  const { Fr } = await import('@aztec/bb.js');
   
   try {
-    const salt = generateSecureSalt();
-    console.log('🧂 Salt generated:', salt.toString());
+    let salt: any;
+    let saltString: string;
+    
+    if (preSalt) {
+      // Use provided random salt (for game creation OR joining)
+      saltString = preSalt;
+      salt = new Fr(BigInt(saltString));
+      console.log('🎲 Using pre-generated random salt:', saltString);
+    } else if (gameContract) {
+      // Loading existing game - retrieve stored salt
+      const storedSecret = getStoredSecret(gameContract);
+      if (!storedSecret) {
+        throw new Error('No stored secret found for this game contract');
+      }
+      saltString = storedSecret.salt;
+      salt = new Fr(BigInt(saltString));
+      console.log('🔑 Using stored salt:', saltString);
+    } else {
+      throw new Error('Either gameContract or preSalt must be provided');
+    }
     
     const commitmentHashes: `0x${string}`[] = [];
     const letterCodes: number[] = [];
@@ -251,7 +297,7 @@ export async function generateCommitmentHashes(word: string, gameContract?: stri
       const secretData = {
         word: word.toLowerCase(),
         letterCodes,
-        salt: salt.toString(), // Store salt as string for JSON serialization
+        salt: saltString, // Store salt as string for JSON serialization
         timestamp: Date.now()
       };
       
@@ -278,12 +324,10 @@ export async function generateCommitmentHashes(word: string, gameContract?: stri
         console.error('❌ Failed to store secret in localStorage:', storageError);
         throw new Error(`Failed to store secret: ${storageError}`);
       }
-    } else {
-      console.warn('⚠️ No gameContract provided, secret not stored');
     }
     
     console.log(`✅ Generated commitment hashes for word "${word}":`, commitmentHashes);
-    return commitmentHashes;
+    return { hashes: commitmentHashes, salt: saltString };
   } catch (error) {
     console.error('❌ Error generating commitment hashes:', error);
     throw error;

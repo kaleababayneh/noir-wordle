@@ -17,15 +17,6 @@ import { config } from '../config';
 import { abi } from '../abi/abi';
 
 
-export function generateSecureSalt(): Fr {
-  // For now using salt 0 as specified, but can be made secure later
-  // TODO: In production, generate a proper random salt
-  console.log('Using salt Fr(0) as specified');
-  const salt = new Fr(0n);
-  console.log('🧂 Generated salt:', salt.toString());
-  return salt;
-}
-
 /**
  * Generate a proper Poseidon commitment hash for a letter
  * This matches the circuit's commitment verification

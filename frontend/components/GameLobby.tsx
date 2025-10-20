@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useWordleFactory, type GameInfo } from '../hooks/useWordleFactory';
-import { generateCommitmentHashes } from '../utils/contractHelpers';
+import { generateCommitmentHashes, generateRandomSalt } from '../utils/contractHelpers';
 
 interface GameLobbyProps {
   onGameSelected: (gameContract: string) => void;
@@ -61,18 +61,27 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
         return;
       }
 
-      // First generate commitments without storing (we need the game contract address first)
-      const commitmentHashes = await generateCommitmentHashes(word.toLowerCase());
+      // Generate a cryptographically secure random salt (NOT guessable!)
+      const randomSalt = await generateRandomSalt();
+      console.log('🔐 Generated random salt for game creation');
+      
+      // Generate commitments with the random salt
+      const { hashes: commitmentHashes, salt } = await generateCommitmentHashes(
+        word.toLowerCase(),
+        undefined, // no gameContract yet
+        randomSalt // use truly random salt
+      );
       console.log("Commitment hashes generated:", commitmentHashes);
       
       // Create the game
       await createNewGame(gameId, commitmentHashes);
       
-      // Store the word and game info for later secret storage
-      // We'll store the secret when the GameCreated event is received
+      // Store the word, gameId, and SALT for later secret storage
+      // We'll store the full secret when the GameCreated event is received
       sessionStorage.setItem('pendingSecret', JSON.stringify({
         word: word.toLowerCase(),
-        gameId: gameId
+        gameId: gameId,
+        salt: salt // Store the random salt to reuse it
       }));
       
       // Reset form
@@ -80,7 +89,6 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       setWord('');
       setShowCreateForm(false);
       
-      alert('Game created successfully! 🎉\nYour secret word has been stored securely.');
     } catch (error) {
       console.error('Error creating game:', error);
       alert('Failed to create game. Please try again.');
@@ -150,7 +158,13 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
     try {
       console.log(`🎯 Joining game ${game.gameId} at ${game.gameContract} with word "${word}"`);
       
-      const commitmentHashes = await generateCommitmentHashes(word.toLowerCase(), game.gameContract);
+      // Generate random salt for joining player
+      const randomSalt = await generateRandomSalt();
+      const { hashes: commitmentHashes } = await generateCommitmentHashes(
+        word.toLowerCase(), 
+        game.gameContract,
+        randomSalt
+      );
       console.log('🔐 Commitment hashes generated and secret stored');
       
       await joinGameByContract(game.gameContract as `0x${string}`, commitmentHashes);
@@ -162,7 +176,6 @@ export function GameLobby({ onGameSelected }: GameLobbyProps) {
       setShowJoinForm(false);
       onGameSelected(game.gameContract);
       
-      alert('Joined game successfully! 🎉');
     } catch (error: any) {
       console.error('❌ Error joining game:', error);
       
