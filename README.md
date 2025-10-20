@@ -4,7 +4,7 @@
 
 **ZK Wordle** is a peer-to-peer Wordle game where two players set a secret word for each other to guess and continue playing until one of them correctly guesses the other’s word. The game logic is implemented in both a **Solidity smart contract** and a  **Noir circuit** , making it secure and resistant to tampering or attacks.
 
-Zero-knowledge proofs aren’t just an added feature here — without them, this game wouldn’t be possible. Each player’s secret word, along with its private salt, never leaves their device. This differs from simply hashing a word and committing the hash on-chain, which would still be vulnerable to offline dictionary brute-force attacks. In ZK Wordle, zero-knowledge ensures that a guess can be verified as correct or incorrect  **without revealing the actual word** . More technical details of the implementation are explained below.
+Zero-knowledge proofs aren’t just an added feature here — without them, this game wouldn’t be possible. Each player’s secret word, along with its private salt, never leaves their device. This differs from simply hashing a word and committing the hash on-chain, which would still be vulnerable to offline dictionary brute-force attacks. In ZK Wordle, zero-knowledge ensures that a guess can be verified by the word setter as correct or incorrect  **without revealing the actual word** in a real time. More technical details of the implementation are explained below.
 
 ---
 
@@ -16,9 +16,9 @@ Zero-knowledge (ZK) is one of the most fascinating cryptographic techniques to d
 
 ### ZK in Gaming
 
-In gaming, some projects already employ ZK, but often only to verify the  **final result** , leaving intermediate steps unverified. This approach works for single-player games where only the outcome matters.  **Wordle** , however, is different — and especially in a **peer-to-peer** setting, every step matters. Two players compete while trusting neither the other nor a third party.
+In gaming, some projects already employ ZK, but often only to verify the  **final result** , leaving intermediate steps unverified. This approach works for single-player games where only the outcome matters.  Peer to Peer **Wordle** , however, is different — and in a **peer-to-peer** setting, every step matters. Two players compete while trusting neither the other nor a third party.
 
-In ZK Wordle, zero-knowledge isn’t a “bonus privacy feature” — it’s  **essential** . Without it, hashing words would be insecure. Here, each word is hashed together with a  **secret salt** , and both remain private on the player’s device. When a player submits a guess, their opponent generates a **zero-knowledge proof** and verifies it on-chain without leaking any part of their secret word or salt.
+In ZK Wordle, zero-knowledge isn’t a “bonus privacy feature” — it’s  **essential** . Without it, hashing words would be insecure or the verification of guesses will be reliant in the honest behavior of the opponent player. Here, each word is hashed together with a  **secret salt** , and both remain private on the player’s device. When a player submits a guess, their opponent generates a **zero-knowledge proof** and verifies it on-chain without leaking any part of their secret word or salt.
 
 ---
 
@@ -31,6 +31,13 @@ Another important rule of Wordle is that guesses must be valid English words —
 * When a player makes a guess, they provide the **Merkle proof** (path) for that word.
 
 This ensures that every guess is a legitimate English word without revealing the entire dictionary or increasing on-chain storage.
+
+### Deployment and Next Steps
+
+The game is currently deployed on the Base Sepolia testnet.
+👉 Please make sure you are connected to the Base Sepolia network, as wallets like MetaMask may occasionally default to a different chain. Double-check your network selection before playing — it’s important.
+
+The game is fully functional and playable, but it was built primarily as a learning project. As such, the current user experience is minimal. I’m applying for a grant to dedicate more time to development — improving the UI, adding competitive features, and introducing staking or betting mechanics. The goal is to make ZK Wordle not only technically sound but also fun, engaging, and competitive, with time limits and proof-based verification built into the gameplay.
 
 ---
 
